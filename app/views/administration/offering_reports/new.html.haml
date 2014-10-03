@@ -1,7 +1,8 @@
 - @title = t('admin.offering.new.heading')
 
 = form_for @offering_report, url: administration_offering_reports_path do |form|
-  = form.hidden_field :report_date, :value => @date
+  = form.label :report_date, "Report Date"
+  = form.text_field :report_date, :value => @date
   - 10.times do
     = form.fields_for :offerings do |f|
       = f.hidden_field :date, :value => @date

@@ -11,7 +11,7 @@ class Administration::OfferingReportsController < ApplicationController
   def new
     @offering_report = OfferingReport.new
     @offering_report.offerings.build
-    @date = Chronic.parse('last sunday')
+    @date = Chronic.parse('last sunday').to_date
   end
 
   def show
