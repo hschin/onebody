@@ -6,13 +6,17 @@ class Administration::OfferingReportsController < ApplicationController
 
   def index
     @offering_reports = OfferingReport.all
-    @date = Chronic.parse('last sunday')
   end
 
   def new
     @offering_report = OfferingReport.new
     @offering_report.offerings.build
     @date = Chronic.parse('last sunday')
+  end
+
+  def show
+    @offering_report = OfferingReport.last
+    @offerings = @offering_report.offerings
   end
 
   def create
@@ -26,6 +30,13 @@ class Administration::OfferingReportsController < ApplicationController
     @offering_report.other_cents = 0
     @offering_report.total_cents = 0
     @offering_report.save!
+  end
+
+  def edit
+    @offering_report = OfferingReport.find_by_id(params[:id])
+  end
+
+  def update
   end
 
   private

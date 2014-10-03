@@ -1,0 +1,13 @@
+- @title = t('admin.offering.report')
+
+%table.table.search-results
+  %tr
+    %th= t('admin.offering.number')
+    %th= t('admin.offering.name')
+    %th View Report
+  - @offering_reports.each do |offering_report|
+    %tr
+      %td= offering_report.id
+      %td= offering_report.report_date
+      %td
+        = link_to 'View', administration_offering_report_path(offering_report.id)

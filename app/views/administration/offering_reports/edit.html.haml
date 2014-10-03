@@ -1,0 +1,20 @@
+- @title = t('admin.offering.new.heading')
+
+= form_for @offering_report, url: administration_offering_reports_path do |form|
+  = form.hidden_field :report_date, :value => @date
+  = form.fields_for :offerings do |f|
+    = f.hidden_field :date, :value => @date
+    .row
+      .col-lg-4
+        .form-group
+          = f.label :name, t('admin.offering.name')
+          = f.text_field :name, class: 'form-control'
+      .col-lg-4
+        .form-group
+          = f.label :offering_type, t('admin.offering.type')
+          = f.select :offering_type, OFFERING_TYPE, {}, class: 'form-control'
+      .col-lg-4
+        .form-group
+          = f.label :amount_cents, t('admin.offering.amount')
+          = f.text_field :amount_cents, class: 'form-control'
+  = form.button 'Save'
