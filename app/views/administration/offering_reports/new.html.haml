@@ -1,22 +1,33 @@
 - @title = t('admin.offering.new.heading')
 
 = form_for @offering_report, url: administration_offering_reports_path do |form|
-  = form.label :report_date, "Report Date"
-  = form.text_field :report_date, :value => @date
+  .row
+    .col-lg-3
+      = form.label :report_date, "Report Date"
+      = form.text_field :report_date, :value => @date, class: 'form-control'
+      %br
   - 10.times do
     = form.fields_for :offerings do |f|
       = f.hidden_field :date, :value => @date
       .row
-        .col-lg-4
+        .col-lg-3
           .form-group
-            = f.label :name, t('admin.offering.name')
+            = f.label :person_id, t('admin.offering.name')
+            = f.select :person_id, Person.all.collect {|p| [ p.name, p.id ] }, {include_blank: true}, class: 'form-control'
+        .col-lg-3
+          .form-group
+            = f.label :name, t('admin.offering.others')
             = f.text_field :name, class: 'form-control'
-        .col-lg-4
+        .col-lg-2
           .form-group
-            = f.label :offering_type, t('admin.offering.type')
-            = f.select :offering_type, OFFERING_TYPE, {}, class: 'form-control'
-        .col-lg-4
+            = f.label :family_id, t('admin.offering.')
+            = f.select :family_id, Family.all.collect {|p| [ p.name, p.id ] }, {include_blank: true}, class: 'form-control'
+        .col-lg-2
           .form-group
             = f.label :amount_cents, t('admin.offering.amount')
             = f.text_field :amount_cents, class: 'form-control'
+        .col-lg-2
+          .form-group
+            = f.label :offering_type, t('admin.offering.type')
+            = f.select :offering_type, OFFERING_TYPE, {}, class: 'form-control'
   = form.button 'Save'

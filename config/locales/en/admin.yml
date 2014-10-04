@@ -52,6 +52,7 @@ en:
         heading: "New Offerings"
       number: "No."
       name: "Name"
+      others: "New Name"
       type: "Type"
       amount: "Amount"
 
