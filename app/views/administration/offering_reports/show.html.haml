@@ -20,6 +20,6 @@
       %td= offering.person.try(:name) || offering.name
       - OFFERING_TYPE.each do |type|
         - if offering.offering_type == type
-          %td= offering.amount
+          %td= humanized_money_with_symbol(offering.amount)
         - else
           %td -

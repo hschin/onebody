@@ -56,6 +56,12 @@ en:
       type: "Type"
       amount: "Amount"
 
+    offering_report:
+      date: "Date"
+      view: "View"
+      view_report: "View Report"
+      total: "Total Amount"
+
     deleted_people:
       tabs:
         people: "Deleted People"
