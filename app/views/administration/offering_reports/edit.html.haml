@@ -1,7 +1,11 @@
-- @title = t('admin.offering.new.heading')
+- @title = t('admin.offering.edit.heading')
 
 = form_for @offering_report, url: administration_offering_report_path do |form|
-  = form.hidden_field :report_date, :value => @date
+  .row
+    .col-lg-2
+      = form.label :report_date, "Report Date"
+      = form.text_field :report_date, :value => @date, class: 'form-control'
+      %br
   = form.fields_for :offerings do |f|
     = f.hidden_field :date, :value => @date
     .row

@@ -34,9 +34,12 @@ class Administration::OfferingReportsController < ApplicationController
 
   def edit
     @offering_report = OfferingReport.find_by_id(params[:id])
+    @date = @offering_report.report_date
   end
 
   def update
+    @offering_report = OfferingReport.find_by_id(params[:id])
+    @offering_report.update!(offering_report_params)
   end
 
   private

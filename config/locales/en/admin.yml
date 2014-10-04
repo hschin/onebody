@@ -50,6 +50,8 @@ en:
       summary: "Offering Summary"
       new:
         heading: "New Offerings"
+      edit:
+        heading: "Edit Offerings"
       number: "No."
       name: "Name"
       others: "New Name"
