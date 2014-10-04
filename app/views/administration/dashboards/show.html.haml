@@ -67,10 +67,10 @@
         .box-body
           %p= t('admin.offering.intro')
           %p
-            = link_to new_administration_offering_path, class: 'btn btn-info' do
+            = link_to new_administration_offering_report_path, class: 'btn btn-info' do
               = icon 'fa fa-money'
               = t('admin.offering.add')
-            = link_to administration_offerings_path, class: 'btn btn-info' do
+            = link_to administration_offering_reports_path, class: 'btn btn-info' do
               = icon 'fa fa-list-alt'
               = t('admin.offering.report')
 

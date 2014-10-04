@@ -28,7 +28,7 @@ class Administration::OfferingsController < ApplicationController
   private
 
   def offering_params
-    params.require(:offering).permit(:date, :person_id, :family_id, :offering_type, :name, :amount_cents, :amount_currency)
+    params.require(:offering).permit(:date, :person_id, :family_id, :offering_type, :name, :amount_cents, :amount_currency, :offering_report_id)
   end
 
   def sum(t)

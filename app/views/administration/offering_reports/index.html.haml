@@ -1,0 +1,13 @@
+- @title = t('admin.offering.report')
+
+%table.table.search-results
+  %tr
+    %th= t('admin.offering_report.date')
+    %th= t('admin.offering_report.total')
+    %th= t('admin.offering_report.view_report')
+  - @offering_reports.each do |offering_report|
+    %tr
+      %td= offering_report.report_date
+      %td= humanized_money_with_symbol(offering_report.total_cents)
+      %td
+        = link_to t('admin.offering_report.view'), administration_offering_report_path(offering_report.id)

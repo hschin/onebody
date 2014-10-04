@@ -15,76 +15,25 @@
 - if @people and @people.any?
 
   - if @logged_in.full_access?
-    %table.table.search-results
-      %tr
-        %th
-        - if @search.business
-          %th= t('search.column.business')
-          %th= t('search.column.category')
-        - else
-          %th= t('search.column.name')
-          %th Home
-          %th Work
-          %th Mobile
-          %th= t('search.column.family')
-        - if show_birthdays?
-          %th= t('search.column.birthday')
-        %th
-        - if show_testimonies?
-          %th= t('search.column.testimony')
-        - if @family
-          %th
+    .row
       - @people.each do |person|
-        %tr.row-with-avatar
-          %td.avatar
-            = link_to person do
-              = avatar_tag person, fallback_to_family: true
-          - if @search.business
-            %td= link_to person.business_name, person_path(person, business: true)
-            %td
-              - if person.business_category.present?
-                = link_to person.business_category, search_path(business: true, category: person.business_category)
-          - else
-            %td
-              = link_to person.name, person
-              - unless person.visible?
-                %i.fa.fa-lock
-            %td
-              - if person.family.home_phone
-                = link_to person.family.home_phone, person.family
-            %td
-              - if person.work_phone
-                = link_to person.work_phone, person.family
-            %td
-              - if person.mobile_phone
-                = link_to person.mobile_phone, person.family
-            %td
-              - if person.family
-                = link_to person.family.name, person.family
-              - else
-                = t('search.no_family')
-          - if show_birthdays?
-            %td
-              - if person.birthday
-                = person.birthday.to_s(:date_without_year)
-          %td
-            = link_to_person_role(person, separator: "<span class='text-gray'> / </span>")
-          - if show_testimonies?
-            %td
-              = truncate_words(person.testimony, length: 50)
-              = link_to t('search.results.testimony_read_more'), testimony_person_path(person), class: 'btn btn-xs bg-gray'
-          - if @family
-            %td
-              - unless @family.people.include?(person)
-                = link_to family_person_path(@family, person, move_person: true), data: { method: 'put', confirm: t('are_you_sure') }, class: 'btn btn-warning btn-xs' do
-                  = icon 'fa fa-arrow-circle-left'
-                  = t('people.move.button')
+        .col-lg-4
+          = link_to person do
+            = avatar_tag person, fallback_to_family: true, size: :large
+            %p.center
+              = person.chinese_name
+              (#{person.name})
+
   - else
     -# limited access
-    %table.table
+    .row
       - @people.each do |person|
-        %tr
-          %td= link_to person.name, person
+        .col-lg-4
+          = link_to person do
+            = avatar_tag person, fallback_to_family: true, size: :large
+            %p.center
+              = person.chinese_name
+              (#{person.name})
 
 
 = pagination @people, params: params_without_action

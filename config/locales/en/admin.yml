@@ -50,10 +50,20 @@ en:
       summary: "Offering Summary"
       new:
         heading: "New Offerings"
+      edit:
+        heading: "Edit Offerings"
       number: "No."
       name: "Name"
+      others: "New Name"
       type: "Type"
       amount: "Amount"
+      currency: "Currency"
+
+    offering_report:
+      date: "Date"
+      view: "View"
+      view_report: "View Report"
+      total: "Total Amount"
 
     deleted_people:
       tabs:
