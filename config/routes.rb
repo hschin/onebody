@@ -183,6 +183,7 @@ OneBody::Application.routes.draw do
         get :summary
       end
     end
+    resources :offering_reports
     resources :settings do
       collection do
         put :batch
