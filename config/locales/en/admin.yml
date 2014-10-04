@@ -55,6 +55,7 @@ en:
       others: "New Name"
       type: "Type"
       amount: "Amount"
+      currency: "Currency"
 
     offering_report:
       date: "Date"

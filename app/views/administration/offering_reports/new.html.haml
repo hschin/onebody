@@ -2,7 +2,7 @@
 
 = form_for @offering_report, url: administration_offering_reports_path do |form|
   .row
-    .col-lg-3
+    .col-lg-2
       = form.label :report_date, "Report Date"
       = form.text_field :report_date, :value => @date, class: 'form-control'
       %br
@@ -10,11 +10,11 @@
     = form.fields_for :offerings do |f|
       = f.hidden_field :date, :value => @date
       .row
-        .col-lg-3
+        .col-lg-2
           .form-group
             = f.label :person_id, t('admin.offering.name')
             = f.select :person_id, Person.all.collect {|p| [ p.name, p.id ] }, {include_blank: true}, class: 'form-control'
-        .col-lg-3
+        .col-lg-2
           .form-group
             = f.label :name, t('admin.offering.others')
             = f.text_field :name, class: 'form-control'
@@ -26,6 +26,10 @@
           .form-group
             = f.label :amount_cents, t('admin.offering.amount')
             = f.text_field :amount_cents, class: 'form-control'
+        .col-lg-2
+          .form-group
+            = f.label :amount_currency, t('admin.offering.currency')
+            = f.text_field :amount_currency, class: 'form-control'
         .col-lg-2
           .form-group
             = f.label :offering_type, t('admin.offering.type')
