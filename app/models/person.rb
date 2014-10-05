@@ -175,10 +175,6 @@ class Person < ActiveRecord::Base
     name =~ /s$/ ? "#{name}'" : "#{name}'s"
   end
 
-  def inspect
-    "<#{name}>"
-  end
-
   # FIXME deprecated
   def self.can_create?
     true
