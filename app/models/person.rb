@@ -156,9 +156,9 @@ class Person < ActiveRecord::Base
       if deleted?
         "(removed person)"
       elsif suffix
-        "#{first_name} #{last_name}, #{suffix}" rescue '???'
+        "#{last_name} #{first_name}, #{suffix}" rescue '???'
       else
-        "#{first_name} #{last_name}" rescue '???'
+        "#{last_name} #{first_name}" rescue '???'
       end
     end
   end
@@ -173,10 +173,6 @@ class Person < ActiveRecord::Base
   # FIXME this assumes English - how to fix?
   def name_possessive
     name =~ /s$/ ? "#{name}'" : "#{name}'s"
-  end
-
-  def inspect
-    "<#{name}>"
   end
 
   # FIXME deprecated

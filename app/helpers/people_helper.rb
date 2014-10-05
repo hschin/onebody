@@ -18,9 +18,9 @@ module PeopleHelper
 
   def person_title(person)
     if person.description.present?
-      t('people.title_html', name: person.name, description: person.description)
+      t('people.title_html', name: person.chinese_name + ' ' + person.name, description: person.description)
     else
-      person.name
+      person.chinese_name + ' ' + person.name
     end
   end
 
