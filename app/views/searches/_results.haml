@@ -22,7 +22,7 @@
             = avatar_tag person, fallback_to_family: true, size: :large
             %p.center
               = person.chinese_name
-              (#{person.name})
+              = person.name
 
   - else
     -# limited access
@@ -33,7 +33,7 @@
             = avatar_tag person, fallback_to_family: true, size: :large
             %p.center
               = person.chinese_name
-              (#{person.name})
+              = person.name
 
 
 = pagination @people, params: params_without_action
