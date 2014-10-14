@@ -177,7 +177,7 @@
                 %small= sub_title
         %section.content
           = flash_messages
-          = yield
+          = yield.force_encoding("UTF-8")
     .footer
       = render partial: 'layouts/footer_links'
     = javascript_include_tag 'application'
