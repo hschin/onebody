@@ -13,7 +13,7 @@ class Updater
     person: {
       first_name:           :approve,
       last_name:            :approve,
-      chinese_name:            :approve,
+      chinese_name:         :approve,
       suffix:               :approve,
       gender:               :approve,
       mobile_phone:         :approve,
@@ -62,6 +62,7 @@ class Updater
       family_id:            :admin,
       legacy_id:            :admin,
       legacy_family_id:     :admin,
+      member_no:            :admin,
     },
     family: {
       name:                 :approve,
