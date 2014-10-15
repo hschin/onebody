@@ -6,7 +6,7 @@ module Concerns
     # this is a regular module since ActiveSupport::Concern
     # does not import constants by design
     module ImportConstants
-      MAX_RECORDS_TO_IMPORT = 1000
+      MAX_RECORDS_TO_IMPORT = 1200
 
       COLUMN_ALIASES = {
         'First Name'             => 'first_name',
