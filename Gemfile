@@ -38,6 +38,8 @@ gem 'truncate_html'
 gem 'geocoder'
 gem 'date_validator'
 gem 'country_select', github: 'stefanpenner/country_select'
+gem 'dossier'
+
 gem 'money-rails'
 gem 'chronic'
 
