@@ -17,10 +17,11 @@ module PeopleHelper
   alias_method :attribute, :show_attribute? # TODO remove this
 
   def person_title(person)
+    display_name = person.chinese_name ? person.chinese_name + ' ' + person.name : person.name
     if person.description.present?
-      t('people.title_html', name: person.chinese_name + ' ' + person.name, description: person.description)
+      t('people.title_html', name: display_name, description: person.description)
     else
-      person.chinese_name + ' ' + person.name
+      display_name
     end
   end
 
