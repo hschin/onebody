@@ -17,10 +17,10 @@
   - if @logged_in.full_access?
     .row
       - @people.each do |person|
-        .col-lg-4
+        .col-lg-2-4
           = link_to person do
-            = avatar_tag person, fallback_to_family: true, size: :large
-            %p.center
+            = avatar_tag person, fallback_to_family: true, size: :medium
+            %p.center{ style: 'height:50px' }
               = person.chinese_name
               = person.name
 
@@ -28,10 +28,10 @@
     -# limited access
     .row
       - @people.each do |person|
-        .col-lg-4
+        .col-lg-2-4
           = link_to person do
-            = avatar_tag person, fallback_to_family: true, size: :large
-            %p.center
+            = avatar_tag person, fallback_to_family: true, size: :medium
+            %p.center{ style: 'height:50px' }
               = person.chinese_name
               = person.name
 

@@ -17,10 +17,11 @@ module PeopleHelper
   alias_method :attribute, :show_attribute? # TODO remove this
 
   def person_title(person)
+    display_name = person.chinese_name ? person.chinese_name + ' ' + person.name : person.name
     if person.description.present?
-      t('people.title_html', name: person.chinese_name + ' ' + person.name, description: person.description)
+      t('people.title_html', name: display_name, description: person.description)
     else
-      person.chinese_name + ' ' + person.name
+      display_name
     end
   end
 
@@ -64,11 +65,8 @@ module PeopleHelper
       album_avatar_tag(person, options)
     else
       options.reverse_merge!(size: :tn, alt: person.try(:name))
-      # options.reverse_merge!(size: :medium, alt: person.try(:name))
       options.reverse_merge!(class: "avatar #{options[:size]} #{options[:class]}")
       options.reverse_merge!(data: { id: "person#{person.id}", size: options[:size] })
-      # options.reverse_merge!(style: "max-width: none !important")
-      # image_tag(avatar_path(person, options.delete(:size)), options)
       fallback_to_family = options.delete(:fallback_to_family)
       if not person.try(:photo).try(:exists?) and fallback_to_family and person.try(:family).try(:photo).try(:exists?)
         path = family_avatar_path(person.family)

@@ -128,7 +128,8 @@ class Search
   def name!
     return unless name
     where!(
-      "(concat(people.first_name, ' ', people.last_name) like :full_name
+      "(concat(people.last_name, ' ', people.first_name) like :full_name
+       or (people.chinese_name like :full_name)
        or (families.name like :full_name)
        or (people.first_name like :first_name and people.last_name like :last_name))
       ",
