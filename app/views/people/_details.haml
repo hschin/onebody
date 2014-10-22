@@ -28,7 +28,10 @@
       %td
         = preserve_breaks @person.address
         %br
-        == #{@person.city}, #{@person.state} #{@person.short_zip}
+        - if @person.country == "SG"
+          Singapore #{@person.short_zip}
+        - else
+          == #{@person.city}, #{@person.state} #{@person.short_zip}
   = show_attribute?(:birthday) do
     %tr
       %td= t('people.show.details.birthday')

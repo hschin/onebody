@@ -185,7 +185,7 @@ class Person < ActiveRecord::Base
     birthday and ((birthday.yday()+365 - today.yday()).modulo(365) < BIRTHDAY_SOON_DAYS)
   end
 
-  delegate             :home_phone, :address, :address1, :address2, :city, :state, :zip, :short_zip, :mapable?, to: :family, allow_nil: true
+  delegate             :home_phone, :address, :address1, :address2, :city, :state, :zip, :short_zip, :country, :mapable?, to: :family, allow_nil: true
   sharable_attributes  :home_phone, :mobile_phone, :work_phone, :fax, :email, :birthday, :address, :anniversary, :activity
 
   self.skip_time_zone_conversion_for_attributes = [:birthday, :anniversary]
