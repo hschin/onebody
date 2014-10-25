@@ -129,14 +129,14 @@
                 %i.fa.pull-right{ class: tab_expanded?(:directory) ? 'fa-angle-down' : 'fa-angle-left' }
               - if tab_expanded?(:directory)
                 %ul.treeview-menu.visible
-                  %li
-                    = link_to search_path(business: true) do
-                      = icon 'fa fa-briefcase'
-                      = t('nav.directory_sub.business')
-                  %li
-                    = link_to new_printable_directory_path do
-                      = icon 'fa fa-print'
-                      = t('nav.directory_sub.printed')
+                  / %li
+                  /   = link_to search_path(business: true) do
+                  /     = icon 'fa fa-briefcase'
+                  /     = t('nav.directory_sub.business')
+                  / %li
+                  /   = link_to new_printable_directory_path do
+                  /     = icon 'fa fa-print'
+                  /     = t('nav.directory_sub.printed')
                   %li
                     = link_to search_path(advanced: true) do
                       = icon 'fa fa-search'
