@@ -1,8 +1,6 @@
 source 'http://rubygems.org'
 
-ruby File.read(File.expand_path('../.ruby-version', __FILE__)).strip.sub(/ruby\-/, '')
-
-gem 'rails', '~> 4.1.5'
+gem 'rails', '~> 4.1.7'
 gem 'rails_autolink'
 gem 'mysql2'
 gem 'jquery-rails'
@@ -39,6 +37,7 @@ gem 'geocoder'
 gem 'date_validator'
 gem 'country_select', github: 'stefanpenner/country_select'
 gem 'dossier'
+gem 'mustache'
 
 gem 'money-rails'
 gem 'chronic'
@@ -49,6 +48,8 @@ group :test do
 end
 
 group :development do
+  gem 'better_errors'
+  gem 'binding_of_caller'
   gem 'zeus'
   gem 'watchr'
   gem 'terminal-notifier'
@@ -62,7 +63,7 @@ group :development, :test do
   gem 'pry'
   gem 'pry-remote'
   gem 'pry-rails'
-  gem 'rspec-rails', '~> 3.0.0.beta'
+  gem 'rspec-rails'
   gem 'spring'
   gem 'spring-commands-rspec'
   gem 'guard-rspec', require: false
