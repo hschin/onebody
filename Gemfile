@@ -1,6 +1,6 @@
 source 'http://rubygems.org'
 
-gem 'rails', '~> 4.1.7'
+gem 'rails', '~> 4.1.8'
 gem 'rails_autolink'
 gem 'mysql2'
 gem 'jquery-rails'
@@ -26,7 +26,7 @@ gem 'load_and_authorize_resource', github: 'seven1m/load_and_authorize_resource'
 gem 'bcrypt'
 gem 'mini_magick'
 gem 'activerecord-session_store'
-gem 'sass-rails', '~> 4.0.2'
+gem 'sass-rails', '~> 4.0.5'
 gem 'bootstrap-sass', '~> 3.1.1'
 gem 'will_paginate-bootstrap', '1.0.1'
 gem 'uglifier'
@@ -57,6 +57,7 @@ group :development do
   gem 'capistrano-newrelic'
   gem 'capistrano-bundler'
   gem 'capistrano-rails'
+  gem 'quiet_assets'
 end
 
 group :development, :test do

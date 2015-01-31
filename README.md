@@ -4,7 +4,9 @@
 
 [![Install on DigitalOcean](http://installer.71m.us/button.svg)](http://installer.71m.us/install?url=https://github.com/churchio/onebody)
 
-[Install Elsewhere](https://github.com/churchio/onebody/wiki/Installation) / [**Get Help**](https://webchat.freenode.net/?channels=#church.io)
+[Install Elsewhere](https://github.com/churchio/onebody/wiki/Installation)
+
+[![Gitter](https://badges.gitter.im/Chat%20with%20us.svg)](https://gitter.im/churchio/onebody)
 
 OneBody is open-source, web-based social networking, email list, online directory, and lightweight document management software for churches.
 
@@ -15,6 +17,7 @@ Visit our website at [church.io](http://church.io) or browse through our [screen
 ## Contributing to the Project
 
 [![Build Status](http://img.shields.io/travis/churchio/onebody.svg)](https://travis-ci.org/churchio/onebody)
+[![Security Status](https://hakiri.io/github/churchio/onebody/master.svg)](https://hakiri.io/github/churchio/onebody/master)
 [![Code Climate](http://img.shields.io/codeclimate/github/churchio/onebody.svg)](https://codeclimate.com/github/churchio/onebody)
 [![Stories in Ready](https://badge.waffle.io/churchio/onebody.svg?label=ready&title=stories+ready)](http://waffle.io/churchio/onebody)
 [![Stories in Progress](https://badge.waffle.io/churchio/onebody.svg?label=in+progress&title=stories+in+progress)](http://waffle.io/churchio/onebody)
@@ -55,18 +58,19 @@ For more help with Vagrant, check out the [Vagrant docs](http://docs.vagrantup.c
 
 Operating System: Mac or Linux (See Vagrant above if you're on Windows)
 
-1. Install Ruby 2.1.2 or higher (we recommend you use [RVM](https://rvm.io/)).
+1. Install Ruby 2.1.5 or higher (we recommend you use [RVM](https://rvm.io/)).
 2. Install MySQL.
 3. Install Git.
 4. Install ImageMagick.
-5. `git clone git://github.com/churchio/onebody.git && cd onebody`
-6. `grant all on onebody_dev.* to onebody@localhost identified by 'onebody';"`
-7. `grant all on onebody_test.* to onebody@localhost identified by 'onebody';"`
-8. `cp config/database.yml{.example,}`
-9. `bundle install`
-10. `cp config/secrets.yml{.example,} && vim config/secrets.yml` and add a random secret token to both the "development" and "test" sections (you can use `rake secret` to generate a new random secret).
-11. `rake db:create db:migrate db:seed`
-12. `rails server`
+5. Install Node.js.
+6. `git clone git://github.com/churchio/onebody.git && cd onebody`
+7. `mysql -uroot -e "grant all on onebody_dev.* to onebody@localhost identified by 'onebody';"`
+8. `mysql -uroot -e "grant all on onebody_test.* to onebody@localhost identified by 'onebody';"`
+9. `cp config/database.yml{.example,}`
+10. `bundle install`
+11. `cp config/secrets.yml{.example,} && vim config/secrets.yml` and add a random secret token to both the "development" and "test" sections (you can use `rake secret` to generate a new random secret).
+12. `rake db:create db:schema:load db:seed`
+13. `rails server`
 
 Now visit the site running in development mode at http://localhost:3000.
 
@@ -95,11 +99,12 @@ rspec
 If you don't have a test database yet, create it like you did the dev database:
 
 ```
-mysql -u root -e "create database onebody_test default character set utf8 default collate utf8_general_ci; grant all on onebody_test.* to onebody@localhost identified by 'onebody';"
+rake db:create db:schema:load
 ```
 
 ## Get Help
 
+* [Gitter Chat](https://gitter.im/churchio/onebody)
 * IRC channel #church.io on Freenode (try the [web-based IRC client](https://webchat.freenode.net/?channels=#church.io))
 * [Wiki](http://wiki.github.com/churchio/onebody)
 * [Google Group](http://groups.google.com/group/churchio)
