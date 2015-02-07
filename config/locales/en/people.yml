@@ -23,6 +23,7 @@ en:
         home_phone: "Home Phone"
         work_phone: "Work Phone"
         address: "Home Address"
+        member_no: "Member No."
         birthday: "Birthday"
         anniversary: "Wedding Anniversary"
         social: "Social"

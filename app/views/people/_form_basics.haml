@@ -52,6 +52,9 @@
   = fields_for :family, @person.family do |family_fields|
     = render partial: 'families/phone_and_address_fields', locals: { form: family_fields }
 .form-group
+  = form.label :member_no
+  = form.text_field :member_no, size: 15, class: 'form-control', disabled: !@logged_in.admin?(:edit_profiles)
+.form-group
   = form.label :birthday
   .input-group
     .input-group-btn

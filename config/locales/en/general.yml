@@ -103,6 +103,7 @@ en:
         suffix: "Suffix"
         twitter: "Twitter Username"
         work_phone: "Work Phone"
+        member_no: "Member No."
       group:
         name: "Name"
         category: "Category"
