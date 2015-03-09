@@ -5,7 +5,7 @@
     %title
       = setting(:name, :site)
       - if @title.present?
-        == | #{@title.force_encoding("UTF-8")}.gsub(/<.+?>/, '').html_safe}
+        == | #{@title}
     %meta{ content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no', name: 'viewport' }
     = yield(:meta)
     = stylesheet_link_tag 'application'
