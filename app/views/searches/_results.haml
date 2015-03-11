@@ -32,9 +32,11 @@
       - @people.each do |person|
         .col-lg-2-4.col-sm-4.col-xs-6
           = link_to person do
-            = avatar_tag person, fallback_to_family: true, size: :medium
+            .dir-tn{ style: 'overflow: hidden; max-height: 200px; max-width: 200px; height: 200px'}
+              = avatar_tag person, fallback_to_family: true, size: :medium
             %p.center{ style: 'height:50px' }
               = person.chinese_name
+              %br
               = person.name
 
 
