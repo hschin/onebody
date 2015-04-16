@@ -72,44 +72,64 @@
           .icon
             = icon 'fa fa-trash-o'
     .clearfix
->>>>>>> 3.4.0
 
-.collapsable-heading
-  %h2= t('admin.gatherings.heading')
+/ .collapsable-heading
+/   %h2= t('admin.gatherings.heading')
 
-  .floating-boxes.normalize-heights
-    - if @logged_in.admin?(:manage_attendance)
-      .col-md-6
-        .box.box-info.normalize-height
-          .box-header
-            %h3.box-title= t('admin.attendance.heading')
-          .box-body
-            .inlinebar{ style: 'height:85px', 'data-data' => Stats::AttendanceGraphPresenter.new.to_json }
-            %p
-              = link_to administration_attendance_index_path, class: 'btn btn-info' do
-                = icon 'fa fa-bar-chart-o'
-                = t('admin.attendance.button')
+/   .floating-boxes.normalize-heights
+/     - if @logged_in.admin?(:manage_attendance)
+/       .col-md-6
+/         .box.box-info.normalize-height
+/           .box-header
+/             %h3.box-title= t('admin.attendance.heading')
+/           .box-body
+/             .inlinebar{ style: 'height:85px', 'data-data' => Stats::AttendanceGraphPresenter.new.to_json }
+/             %p
+/               = link_to administration_attendance_index_path, class: 'btn btn-info' do
+/                 = icon 'fa fa-bar-chart-o'
+/                 = t('admin.attendance.button')
 
-    - if setting(:features, :checkin) and (@logged_in.admin?(:manage_checkin) or @logged_in.admin?(:assigned_checkin_cards))
-      .col-md-6
-        .box.box-info.normalize-height
-          .box-header
-            %h3.box-title= t('admin.checkin.heading')
-          .box-body
-            .inlinebar{ style: 'height:85px', |
-              'data-data' => Stats::AttendanceGraphPresenter.new(2.days, checked_in: true, by_hour: true).to_json }
-            %p
-              .btn-group
-                = link_to checkin_path, class: 'btn btn-info' do
-                  = icon 'fa fa-check-square-o'
-                  = t('admin.checkin.button')
-                = link_to checkin_printer_path, class: 'btn btn-info' do
-                  = icon 'fa fa-print'
-              = link_to administration_checkin_dashboard_path, class: 'btn btn-warning pull-right' do
-                = icon 'fa fa-dashboard'
-                = t('admin.checkin.dashboard_button')
+/     - if setting(:features, :checkin) and (@logged_in.admin?(:manage_checkin) or @logged_in.admin?(:assigned_checkin_cards))
+/       .col-md-6
+/         .box.box-info.normalize-height
+/           .box-header
+/             %h3.box-title= t('admin.checkin.heading')
+/           .box-body
+/             .inlinebar{ style: 'height:85px', |
+/               'data-data' => Stats::AttendanceGraphPresenter.new(2.days, checked_in: true, by_hour: true).to_json }
+/             %p
+/               .btn-group
+/                 = link_to checkin_path, class: 'btn btn-info' do
+/                   = icon 'fa fa-check-square-o'
+/                   = t('admin.checkin.button')
+/                 = link_to checkin_printer_path, class: 'btn btn-info' do
+/                   = icon 'fa fa-print'
+/               = link_to administration_checkin_dashboard_path, class: 'btn btn-warning pull-right' do
+/                 = icon 'fa fa-dashboard'
+/                 = t('admin.checkin.dashboard_button')
 
-    .clearfix
+/     .clearfix
+
+/ .collapsable-heading
+/   %h2= t('admin.offering.heading')
+
+/   .floating-boxes.normalize-heights
+/     - if @logged_in.admin?
+/       .col-md-6
+/         .box.box-info.normalize-height
+/           .box-header
+/             %h3.box-title= t('admin.offering.heading')
+/           .box-body
+/             %p= t('admin.offering.intro')
+/             %p
+/               = link_to new_administration_offering_report_path, class: 'btn btn-info' do
+/                 = icon 'fa fa-money'
+/                 = t('admin.offering.add')
+/               = link_to administration_offering_reports_path, class: 'btn btn-info' do
+/                 = icon 'fa fa-list-alt'
+/                 = t('admin.offering.report')
+
+/     .clearfix
 
 .collapsable-heading
   %h2= t('admin.administration.heading')
@@ -127,21 +147,6 @@
               = link_to admin_reports_path(), class: 'btn btn-info' do
                 = icon 'fa fa-table'
                 = t('admin.report.button')
-
-    - if @logged_in.admin?
-      .floating-box
-        .box.box-info.normalize-height
-          .box-header
-            %h3.box-title= t('admin.offering.heading')
-          .box-body
-            %p= t('admin.offering.intro')
-            %p
-              = link_to new_administration_offering_report_path, class: 'btn btn-info' do
-                = icon 'fa fa-money'
-                = t('admin.offering.add')
-              = link_to administration_offering_reports_path, class: 'btn btn-info' do
-                = icon 'fa fa-list-alt'
-                = t('admin.offering.report')
 
     - if @logged_in.admin?(:manage_access)
       .col-md-3
