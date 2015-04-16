@@ -44,8 +44,8 @@ module Administration::SettingsHelper
 
   def setting_description(setting)
     content_tag(:span, class: 'help-block') do
-      I18n.t('description', scope: ['admin.settings', setting.section, setting.name])
+      I18n.t('description', scope: ['admin.settings', setting.section, setting.name], default: '')
     end
   end
-
+  
 end

@@ -339,7 +339,7 @@ describe Notifier, type: :mailer do
   end
 
   it 'sends an email update' do
-    Notifier.email_update(@user).deliver
+    Notifier.email_update(@user).deliver_now
     expect(ActionMailer::Base.deliveries).to_not be_empty
     sent = ActionMailer::Base.deliveries.first
     expect(sent.to).to eq([Setting.get(:contact, :send_email_changes_to)])
@@ -349,7 +349,7 @@ describe Notifier, type: :mailer do
   end
 
   it 'sends a profile update' do
-    Notifier.profile_update(@user, first_name: ['Tim', 'Timothy']).deliver
+    Notifier.profile_update(@user, first_name: ['Tim', 'Timothy']).deliver_now
     expect(ActionMailer::Base.deliveries.size).to eq(1)
     sent = ActionMailer::Base.deliveries.last
     expect(sent.subject).to eq("Profile Update from #{@user.name}")
@@ -358,7 +358,7 @@ describe Notifier, type: :mailer do
 
   it 'sends a friend request' do
     @friend = FactoryGirl.create(:person)
-    Notifier.friend_request(@user, @friend).deliver
+    Notifier.friend_request(@user, @friend).deliver_now
     expect(ActionMailer::Base.deliveries.size).to eq(1)
     sent = ActionMailer::Base.deliveries.last
     expect(sent.subject).to eq("Friend Request from #{@user.name}")
@@ -367,7 +367,7 @@ describe Notifier, type: :mailer do
 
   it 'sends a group membership request' do
     @admin = FactoryGirl.create(:person, :super_admin)
-    Notifier.membership_request(@group, @user).deliver
+    Notifier.membership_request(@group, @user).deliver_now
     expect(ActionMailer::Base.deliveries.size).to eq(1)
     sent = ActionMailer::Base.deliveries.last
     expect(sent.subject).to eq("Request to Join Group from #{@user.name}")
@@ -478,12 +478,27 @@ describe Notifier, type: :mailer do
         @sent = ActionMailer::Base.deliveries.first
       end
 
-      it 'delivers in proper site' do
+      it 'replies to the user with a rejection' do
         assert_deliveries 1
         expect(@sent.to).to eq(@email.from)
         expect(@sent.subject).to eq('Message Not Sent: test')
         expect(@sent.from).to eq([Site.current.noreply_email])
         expect(@sent.body.to_s).to match(/the system does not recognize/i)
+      end
+    end
+
+    context 'given message to group in second site using email_host domain' do
+      before do
+        @site2.update_attribute(:email_host, 'two.alt')
+        @email = to_email(from: @site2user.email, to: 'group@two.alt', subject: 'test', body: 'hello')
+        Notifier.receive(@email.to_s)
+        @sent = ActionMailer::Base.deliveries.first
+      end
+
+      it 'delivers in proper site' do
+        assert_deliveries 1
+        assert_emails_delivered(@email, @site2group.people)
+        expect(Site.current).to eq(@site2)
       end
     end
 

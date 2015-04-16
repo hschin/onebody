@@ -78,6 +78,7 @@
       = setting_row('System', 'Language', options: ONEBODY_LOCALES.invert)
       = setting_row('System', 'Time Zone', options: @timezones)
       = setting_row('System', 'Default Country', options: country_options)
+      = setting_row('System', 'Map Zoom Level', options: (12..16).to_a)
       .form-group
         .col-sm-offset-2.col-sm-10
           = button_tag t('save_changes'), class: 'btn btn-success'
@@ -119,6 +120,18 @@
           %span.help-block
             = t('admin.settings.Email.Host.description')
       = setting_row('Email', 'MailgunApiKey')
+      .form-group
+        .col-sm-offset-2.col-sm-10
+          %h3 Pusher
+      = setting_row('Pusher', 'App ID')
+      = setting_row('Pusher', 'App Key')
+      = setting_row('Pusher', 'Secret')
+      = setting_row('Pusher', 'API Scheme')
+      = setting_row('Pusher', 'API Host')
+      = setting_row('Pusher', 'API Port')
+      = setting_row('Pusher', 'WS Host')
+      = setting_row('Pusher', 'WS Port')
+      = setting_row('Pusher', 'WSS Port')
       .form-group
         .col-sm-offset-2.col-sm-10
           = button_tag t('save_changes'), class: 'btn btn-success'

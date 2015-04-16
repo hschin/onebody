@@ -48,9 +48,6 @@
 .form-group
 - if @logged_in.admin?(:edit_profiles) and @person.family.try(:persisted?)
   = form.hidden_field :family_id
-- else
-  = fields_for :family, @person.family do |family_fields|
-    = render partial: 'families/phone_and_address_fields', locals: { form: family_fields }
 .form-group
   = form.label :member_no
   = form.text_field :member_no, size: 15, class: 'form-control', disabled: !@logged_in.admin?(:edit_profiles)

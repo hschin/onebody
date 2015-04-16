@@ -2,6 +2,8 @@ class Family < ActiveRecord::Base
   include Authority::Abilities
   self.authorizer_name = 'FamilyAuthorizer'
 
+  include Concerns::Reorder
+
   MAX_TO_BATCH_AT_A_TIME = 50
 
   has_many :people, -> { order(:position) }, dependent: :destroy
@@ -17,6 +19,7 @@ class Family < ActiveRecord::Base
   scope :undeleted, -> { where(deleted: false) }
   scope :deleted, -> { where(deleted: true) }
   scope :has_printable_people, -> { where('(select count(*) from people where family_id = families.id and visible_on_printed_directory = ?) > 0', true) }
+  scope :by_barcode, -> b { where('barcode_id = ? or alternate_barcode_id = ?', b, b) }
 
   validates :name, presence: true
   validates :last_name, presence: true
@@ -47,16 +50,13 @@ class Family < ActiveRecord::Base
     self.country = Setting.get(:system, :default_country) unless country.present?
   end
 
-  geocoded_by :location
-  after_validation :geocode
-
   def barcode_id=(b)
-    write_attribute(:barcode_id, b.to_s.strip.any? ? b : nil)
+    write_attribute(:barcode_id, b.present? ? b : nil)
     write_attribute(:barcode_assigned_at, Time.now.utc)
   end
 
   def alternate_barcode_id=(b)
-    write_attribute(:alternate_barcode_id, b.to_s.strip.any? ? b : nil)
+    write_attribute(:alternate_barcode_id, b.present? ? b : nil)
     write_attribute(:barcode_assigned_at, Time.now.utc)
   end
 
@@ -68,16 +68,11 @@ class Family < ActiveRecord::Base
     latitude.to_f != 0.0 and longitude.to_f != 0.0
   end
 
-  def location
-    if [address1, city, state].all?(&:present?)
-      {
-        street: address,
-        city: city,
-        state: state,
-        postalCode: zip,
-        adminArea1: country
-      }
-    end
+  include Concerns::Geocode
+  geocode_with :geocoding_address
+
+  def geocoding_address
+    [address, city, state, zip, country].map(&:presence).compact.join(', ')
   end
 
   # not HTML-escaped!
@@ -97,6 +92,12 @@ class Family < ActiveRecord::Base
   end
 
   self.digits_only_for_attributes = [:home_phone]
+
+  def parents
+    people.undeleted.reorder(:id).select do |person|
+      person.adult? and [1, 2].include?(person.position)
+    end
+  end
 
   def children_without_consent
     people.undeleted.reject(&:adult_or_consent?)
@@ -185,11 +186,19 @@ class Family < ActiveRecord::Base
     dates.first if dates.all? { |d| d == dates.first }
   end
 
+  def adults
+    @adults ||= if new_record?
+      people.select(&:adult?)
+    else
+      people.undeleted.adults
+    end
+  end
+
   def suggested_name
-    if people.undeleted.adults.count == 1
-      people.undeleted.adults.first.name
-    elsif people.undeleted.adults.count >= 2
-      (first, second) = people.undeleted.adults.take(2)
+    if adults.count == 1
+      adults.first.name
+    elsif adults.count >= 2
+      (first, second) = adults.take(2)
       if first.last_name == second.last_name
         key = 'families.name.same_last_name'
       else
@@ -206,75 +215,79 @@ class Family < ActiveRecord::Base
     end
   end
 
+  def suggested_last_name
+    adults.first.try(:last_name)
+  end
+
   alias_method :destroy_for_real, :destroy
   def destroy
     people.each(&:destroy)
     update_attribute(:deleted, true)
   end
 
-  class << self
-
-    # used to update a batch of records at one time, for UpdateAgent API
-    def update_batch(records, options={})
-      raise "Too many records to batch at once (#{records.length})" if records.length > MAX_TO_BATCH_AT_A_TIME
-      records.map do |record|
-        # find the family (by legacy_id, preferably)
-        family = where(legacy_id: record["legacy_id"]).first
-        if family.nil? and options['claim_families_by_barcode_if_no_legacy_id'] and record['barcode_id'].present?
-          # if no family was found by legacy id, let's try by barcode id
-          # but only if the matched family has no legacy id!
-          # (because two separate families could potentially have accidentally been assigned the same barcode)
-          if family = where(legacy_id: nil, barcode_id: record["barcode_id"]).first
-            # mark all people in this family as deleted, and we'll try to revive them on the Person#update_batch side
-            family.people.where(legacy_id: nil).update_all(deleted: true)
-          end
-        end
-        # last resort, create a new record
-        family ||= new
-        if options['delete_families_with_conflicting_barcodes_if_no_legacy_id'] and !family.new_record?
-          # closely related to the other option, but this one deletes conflicting families
-          # (only if they have no legacy id)
-          destroy_all ["legacy_id is null and barcode_id = ? and id != ?", record['barcode_id'], family.id]
-        end
-        record.each do |key, value|
-          value = nil if value == ''
-          # avoid overwriting a newer barcode
-          if key == 'barcode_id' and family[:barcode_id_changed]
-            if value == family.barcode_id # barcode now matches (presumably, the external db has been updated to match the OneBody db)
-              family[:barcode_id_changed] = false # clear the flag
-            else
-              next # don't overwrite the newer barcode with an older one
-            end
-          elsif %w(barcode_id_changed remote_hash).include?(key) # skip these
-            next
-          end
-          family.send("#{key}=", value) # be sure to call the actual method (don't use write_attribute)
-        end
-        family.dont_mark_barcode_id_changed = true # set flag to indicate we're the api
-        if family.save
-          s = {status: 'saved', legacy_id: family.legacy_id, id: family.id, name: family.name}
-          if family.barcode_id_changed? # barcode_id_changed flag still set
-            s[:status] = 'saved with error'
-            s[:error] = "Newer barcode not overwritten: #{family.barcode_id.inspect}"
-          end
-          s
-        else
-          {status: 'not saved', legacy_id: record['legacy_id'], id: family.id, name: family.name, error: family.errors.full_messages.join('; ')}
+  # used to update a batch of records at one time, for UpdateAgent API
+  def self.update_batch(records, options={})
+    raise "Too many records to batch at once (#{records.length})" if records.length > MAX_TO_BATCH_AT_A_TIME
+    records.map do |record|
+      # find the family (by legacy_id, preferably)
+      family = where(legacy_id: record["legacy_id"]).first
+      if family.nil? and options['claim_families_by_barcode_if_no_legacy_id'] and record['barcode_id'].present?
+        # if no family was found by legacy id, let's try by barcode id
+        # but only if the matched family has no legacy id!
+        # (because two separate families could potentially have accidentally been assigned the same barcode)
+        if family = where(legacy_id: nil, barcode_id: record["barcode_id"]).first
+          # mark all people in this family as deleted, and we'll try to revive them on the Person#update_batch side
+          family.people.where(legacy_id: nil).update_all(deleted: true)
         end
       end
-    end
-
-    def daily_barcode_assignment_counts(limit, offset, date_strftime='%Y-%m-%d', only_show_date_for=nil)
-      [].tap do |data|
-        counts = connection.select_all("select count(date(barcode_assigned_at)) as count, date(barcode_assigned_at) as date from families where site_id=#{Site.current.id} and barcode_assigned_at is not null group by date(barcode_assigned_at) order by barcode_assigned_at desc limit #{limit.to_i} offset #{offset.to_i};").group_by { |p| Date.parse(p['date'].strftime('%Y-%m-%d')) }
-        ((Date.today-offset-limit+1)..(Date.today-offset)).each do |date|
-          d = date.strftime(date_strftime)
-          d = ' ' if only_show_date_for and date.strftime(only_show_date_for[0]) != only_show_date_for[1]
-          count = counts[date] ? counts[date][0]['count'].to_i : 0
-          data << [d, count]
+      # last resort, create a new record
+      family ||= new
+      if options['delete_families_with_conflicting_barcodes_if_no_legacy_id'] and !family.new_record?
+        # closely related to the other option, but this one deletes conflicting families
+        # (only if they have no legacy id)
+        destroy_all ["legacy_id is null and barcode_id = ? and id != ?", record['barcode_id'], family.id]
+      end
+      record.each do |key, value|
+        value = nil if value == ''
+        # avoid overwriting a newer barcode
+        if key == 'barcode_id' and family[:barcode_id_changed]
+          if value == family.barcode_id # barcode now matches (presumably, the external db has been updated to match the OneBody db)
+            family[:barcode_id_changed] = false # clear the flag
+          else
+            next # don't overwrite the newer barcode with an older one
+          end
+        elsif %w(barcode_id_changed remote_hash).include?(key) # skip these
+          next
         end
+        family.send("#{key}=", value) # be sure to call the actual method (don't use write_attribute)
+      end
+      family.dont_mark_barcode_id_changed = true # set flag to indicate we're the api
+      if family.save
+        s = {status: 'saved', legacy_id: family.legacy_id, id: family.id, name: family.name}
+        if family.barcode_id_changed? # barcode_id_changed flag still set
+          s[:status] = 'saved with error'
+          s[:error] = "Newer barcode not overwritten: #{family.barcode_id.inspect}"
+        end
+        s
+      else
+        {status: 'not saved', legacy_id: record['legacy_id'], id: family.id, name: family.name, error: family.errors.full_messages.join('; ')}
       end
     end
+  end
 
+  # Go straight to the database to fetch family details for the Directory Map
+  def self.mappable_details
+    connection.select_all(
+      'select families.id, families.name, families.latitude, families.longitude ' \
+      'from families ' \
+      'left outer join people on people.family_id = families.id ' \
+      "where people.visible = #{Family.connection.quoted_true} " \
+      "and families.visible = #{Family.connection.quoted_true} " \
+      "and people.visible_to_everyone = #{Family.connection.quoted_true} " \
+      "and families.site_id = #{Site.current.id} " \
+      'and coalesce(families.latitude, 0.0) != 0.0 ' \
+      'and coalesce(families.longitude, 0.0) != 0.0 ' \
+      'group by families.id, families.name, families.latitude, families.longitude'
+    ).to_a
   end
 end
