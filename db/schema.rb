@@ -361,6 +361,36 @@ ActiveRecord::Schema.define(version: 20150318034613) do
     t.datetime "updated_at"
   end
 
+  create_table "offering_reports", force: :cascade do |t|
+    t.date     "report_date"
+    t.integer  "monthly_cents",      limit: 4
+    t.integer  "missions_cents",     limit: 4
+    t.integer  "thanksgiving_cents", limit: 4
+    t.integer  "fundraising_cents",  limit: 4
+    t.integer  "new_year_cents",     limit: 4
+    t.integer  "christmas_cents",    limit: 4
+    t.integer  "other_cents",        limit: 4
+    t.integer  "total_cents",        limit: 4
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "offerings", force: :cascade do |t|
+    t.date     "date"
+    t.integer  "person_id",          limit: 4
+    t.integer  "family_id",          limit: 4
+    t.string   "offering_type",      limit: 255
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.string   "name",               limit: 255
+    t.integer  "amount_cents",       limit: 4,   default: 0,     null: false
+    t.string   "amount_currency",    limit: 255, default: "SGD", null: false
+    t.integer  "offering_report_id", limit: 4
+  end
+
+  add_index "offerings", ["family_id"], name: "index_offerings_on_family_id", using: :btree
+  add_index "offerings", ["person_id"], name: "index_offerings_on_person_id", using: :btree
+
   create_table "pages", force: :cascade do |t|
     t.string   "slug",       limit: 255
     t.string   "title",      limit: 255
@@ -462,6 +492,12 @@ ActiveRecord::Schema.define(version: 20150318034613) do
     t.string   "twitter",                      limit: 15
     t.integer  "incomplete_tasks_count",       limit: 4,     default: 0
     t.boolean  "primary_emailer",              limit: 1
+    t.string   "chinese_name",                 limit: 255
+    t.string   "congregation",                 limit: 255
+    t.date     "baptism_date"
+    t.date     "confirmation_date"
+    t.string   "status",                       limit: 255
+    t.string   "member_no",                    limit: 255
     t.integer  "last_seen_stream_item_id",     limit: 4
     t.integer  "last_seen_group_id",           limit: 4
   end
