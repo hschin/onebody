@@ -38,7 +38,7 @@
       %td
         = preserve_breaks @person.address
         %br
-        - if @person.country == "SG"
+        - if @family.country == "SG"
           Singapore #{@person.short_zip}
         - else
           == #{@person.city}, #{@person.state} #{@person.short_zip}
