@@ -3,8 +3,10 @@
 # OneBody
 
 [![Install on DigitalOcean](https://img.shields.io/badge/install-digital_ocean-479de4.svg)](http://installer.71m.us/install?url=https://github.com/churchio/onebody)
-[![Install on Amazon EC2](https://img.shields.io/badge/install-amazon_ec2-3b82bd.svg)](https://github.com/churchio/onebody/wiki/Amazon-AMI)
-[![Install elsewhere](https://img.shields.io/badge/install-other-316b9c.svg)](https://github.com/churchio/onebody/wiki/Installation)
+[![Install on Amazon EC2](https://img.shields.io/badge/install-amazon_ec2-f78527.svg)](https://github.com/churchio/onebody/wiki/Amazon-AMI)
+[![Install on Docker](https://img.shields.io/badge/install-docker-008bb8.svg)](https://github.com/churchio/onebody/wiki/Installation-with-Docker)
+[![Install on a hypervisor](https://img.shields.io/badge/install-vm-002f6b.svg)](https://github.com/churchio/onebody/wiki/Virtual-Appliance)
+[![Install elsewhere](https://img.shields.io/badge/install-other-999999.svg)](https://github.com/churchio/onebody/wiki/Installation)
 [![Chat with us](https://img.shields.io/badge/chat-slack-e01563.svg)](https://slackin-churchio.herokuapp.com/)
 
 OneBody is open-source, web-based social networking, email list, online directory, and lightweight document management software for churches.
@@ -62,7 +64,7 @@ Check out [Using Vagrant](https://github.com/churchio/onebody/wiki/Using-Vagrant
 
 Operating System: Mac or Linux (See Vagrant above if you're on Windows)
 
-1. Install Ruby 2.1.5 or higher (we recommend you use [RVM](https://rvm.io/)).
+1. Install Ruby 2.2.2 or higher (we recommend you use [RVM](https://rvm.io/)).
 2. Install MySQL.
 3. Install Git.
 4. Install ImageMagick.
