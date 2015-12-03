@@ -5,46 +5,25 @@ module Concerns
 
       EXPORT_COLS = {
         person: %w(
-          family_id
-          position
-          gender
+          member_no
           first_name
           last_name
+          chinese_name
+          baptism_date
+          confirmation_date
+          status
           mobile_phone
           work_phone
           fax
           birthday
           email
           website
-          classes
-          shepherd
-          mail_group
-          about
-          testimony
-          share_mobile_phone
-          share_work_phone
-          share_fax
-          share_email
-          share_birthday
-          share_address
-          share_anniversary
-          share_home_phone
-          business_category
-          business_name
-          business_description
-          business_address
-          business_phone
-          business_email
-          business_website
-          legacy_id
           suffix
-          anniversary
           updated_at
           alternate_email
           account_frozen
           messages_enabled
           visible
-          parental_consent
           friends_enabled
           member
           staff
@@ -54,11 +33,13 @@ module Concerns
           visible_to_everyone
           visible_on_printed_directory
           full_access
-          legacy_family_id
           share_activity
           child
           custom_type
           description
+          family_id
+          position
+          gender
         ),
         family: %w(
           name
