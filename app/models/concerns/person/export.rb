@@ -33,6 +33,8 @@ module Concerns
           visible_to_everyone
           visible_on_printed_directory
           full_access
+          status
+          legacy_family_id
           share_activity
           child
           custom_type
@@ -63,34 +65,36 @@ module Concerns
       module ClassMethods
         def to_csv
           CSV.generate do |csv|
-            csv << EXPORT_COLS[:person] + EXPORT_COLS[:family].map { |c| "family_#{c}" }
-            total = ::Person.undeleted.count
-            (1..(total/100+1)).each do |page|
-              ::Person.undeleted.includes(:family).paginate(per_page: 100, page: page).each do |person|
-                next unless person.family
-                csv << EXPORT_COLS[:person].map { |c| person.send(c) } + \
-                       EXPORT_COLS[:family].map { |c| person.family.send(c) }
-              end
+            custom_fields = CustomField.all
+            csv << EXPORT_COLS[:person] + \
+                   EXPORT_COLS[:family].map { |c| "family_#{c}" } + \
+                   custom_fields.map(&:slug)
+            ::Person.undeleted.includes(:family, :custom_field_values).find_each do |person|
+              next unless person.family
+              csv << EXPORT_COLS[:person].map { |c| person.send(c) } + \
+                     EXPORT_COLS[:family].map { |c| person.family.send(c) } + \
+                     custom_fields.map { |f| person.fields[f.id] }
             end
           end
         end
 
         def to_xml
+          custom_fields = CustomField.all
           builder = Builder::XmlMarkup.new
           builder.families do |families|
-            total = Family.undeleted.count
-            (1..(total/100+1)).each do |page|
-              Family.undeleted.includes(:people).paginate(per_page: 100, page: page).each do |family|
-                families.family do |fam|
-                  EXPORT_COLS[:family].each do |col|
-                    fam.tag!(col, family.send(col))
-                  end
-                  fam.people do |people|
-                    family.people.sort_by(&:position).each do |person|
-                      people.person do |p|
-                        EXPORT_COLS[:person].each do |col|
-                          p.tag!(col, person.attributes[col])
-                        end
+            Family.undeleted.includes(people: :custom_field_values).find_each do |family|
+              families.family do |fam|
+                EXPORT_COLS[:family].each do |col|
+                  fam.tag!(col, family.send(col))
+                end
+                fam.people do |people|
+                  family.people.sort_by(&:position).each do |person|
+                    people.person do |p|
+                      EXPORT_COLS[:person].each do |col|
+                        p.tag!(col, person.attributes[col])
+                      end
+                      custom_fields.each do |field|
+                        p.tag!(field.slug, person.fields[field.id])
                       end
                     end
                   end

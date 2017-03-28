@@ -94,7 +94,7 @@ class GroupsController < ApplicationController
             group.attributes = vals.permit(*group_attributes)
             if group.changed?
               unless group.save
-                @errors << [group.id, group.errors.full_messages]
+                @errors << [group.id, group.errors.values]
               end
             end
           end
@@ -125,7 +125,7 @@ class GroupsController < ApplicationController
     @groups.order!(:name)
     @hidden_groups = @groups.where(hidden: true)
     @groups.where!(approved: true) unless @logged_in.admin?(:manage_groups)
-    @groups.where!(hidden: false) unless @logged_in.admin?(:manage_groups) and params[:include_hidden]
+    @groups.where!(hidden: false) unless params[:include_hidden]
     @groups = @groups.page(params[:page])
     respond_to do |format|
       format.html { render action: 'search' }
@@ -155,7 +155,7 @@ class GroupsController < ApplicationController
   end
 
   def group_attributes
-    base = [:name, :description, :photo, :meets, :location, :directions, :other_notes, :address, :members_send, :private, :category, :leader_id, :blog, :email, :prayer, :attendance, :gcal_private_link, :approval_required_to_join, :pictures, :cm_api_list_id, :has_tasks]
+    base = [:name, :description, :photo, :meets, :location, :directions, :other_notes, :address, :members_send, :private, :category, :blog, :email, :prayer, :attendance, :gcal_private_link, :approval_required_to_join, :pictures, :cm_api_list_id, :has_tasks]
     base += [:approved, :membership_mode, :link_code, :parents_of, :hidden] if @logged_in.admin?(:manage_groups)
     base
   end

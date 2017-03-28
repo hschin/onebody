@@ -3,9 +3,8 @@ class Notifier < ActionMailer::Base
 
   default charset: 'UTF-8', from: -> _ { get_from_address.to_s }
 
-  def profile_update(person, updates)
+  def profile_update(person)
     @person = person
-    @updates = updates
     mail(
       to:      Setting.get(:contact, :send_updates_to),
       subject: I18n.t('notifier.profile_update.subject', person: person.name)
@@ -47,14 +46,13 @@ class Notifier < ActionMailer::Base
     )
   end
 
-  def prayer_request(prayer_request, group)
-    @prayer_request =  prayer_request
+  def prayer_request(prayer_request, group, person)
+    @prayer_request = prayer_request
     @group = group
-    to = group.people.select { |p| p.id != prayer_request.person.id }.map { |p| "#{p.name} <#{p.email}>" }
     mail(
-      to:       to,
+      to:       person.email,
       from:     prayer_request.person.email,
-      subject:  t('notifier.prayer_request.subject', group: prayer_request.group.try(:name))
+      subject:  t('notifier.prayer_request.subject', group: group.try(:name))
     )
   end
 
@@ -220,7 +218,7 @@ class Notifier < ActionMailer::Base
           I18n.t('notifier.rejection.invalid.subject', subject: email.subject),
           I18n.t('notifier.rejection.invalid.body',
                  subject: email.subject,
-                 errors: message.errors.full_messages.join("\n"),
+                 errors: message.errors.values.join("\n"),
                  support: Setting.get(:contact, :tech_support_contact))
         ).deliver_now
         sent_to_count += 1
@@ -310,6 +308,7 @@ class Notifier < ActionMailer::Base
     to_addresses = Array(email.cc) + Array(email.to)
     site = nil
     to_addresses.each do |address|
+      next if address.nil?
       site = Site.where(host: address.downcase.split('@').last).first ||
              Site.where(email_host: address.downcase.split('@').last).first
       return site if site

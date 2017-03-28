@@ -22,6 +22,10 @@
     %span.input-group-addon{ title: t('people.edit.required_field') }
       = icon 'fa fa-star text-red'
 .form-group
+  = form.label :description, t('accounts.description')
+  = form.text_field :description, class: 'form-control', maxlength: 25
+  %span.help-block= t('people.edit.description_hint')
+.form-group
   = form.label :gender, t('accounts.gender')
   .input-group
     = form.select :gender, [['', nil], [t('search.male'), 'Male'], [t('search.female'), 'Female']], {}, class: 'form-control'

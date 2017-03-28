@@ -12,13 +12,16 @@
 #= require leaflet.markercluster
 #= require bootstrap-filestyle
 #= require_directory ./app
+#= require react
+#= require react_ujs
+#= require components
 
 $('[data-toggle^="#"], [data-toggle^="."]').each (i, elm) ->
   elm = $(elm)
   toggle = (show) -> $(elm.data('toggle')).toggle(show)
   if elm.is(':checkbox')
     enabled_selector = elm.data('toggle-selector') || ':checked'
-    elm.on 'change, ifToggled', ->
+    elm.on 'change', ->
       toggle(elm.is(enabled_selector))
     toggle(elm.is(enabled_selector))
   else if elm.is('a')

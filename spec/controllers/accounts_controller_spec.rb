@@ -4,6 +4,7 @@ describe AccountsController, type: :controller do
   render_views
 
   before do
+    Setting.set(1, 'Privacy', 'Require Strong Password', false)
     @person = FactoryGirl.create(:person)
   end
 
@@ -148,12 +149,8 @@ describe AccountsController, type: :controller do
                 expect(@person.family.name).to eq(@person.name)
               end
 
-              it 'should set can_sign_in=true' do
-                expect(@person).to be_can_sign_in
-              end
-
-              it 'should set full_access=true' do
-                expect(@person).to be_full_access
+              it 'should set status=active' do
+                expect(@person.status).to eq('active')
               end
             end
 
@@ -202,12 +199,8 @@ describe AccountsController, type: :controller do
               expect(@person.family.name).to eq(@person.name)
             end
 
-            it 'should set can_sign_in=false' do
-              refute @person.can_sign_in?
-            end
-
-            it 'should set full_access=false' do
-              refute @person.full_access?
+            it 'should set status=inactive' do
+              expect(@person.status).to eq('inactive')
             end
           end
         end
@@ -273,10 +266,10 @@ describe AccountsController, type: :controller do
           end
         end
 
-        context 'user cannot sign in' do
+        context 'user is inactive' do
           before do
-            @person.update_attribute(:can_sign_in, false)
-            post :create, verification: {email: 'rick@example.com'}
+            @person.update_attributes(status: :inactive)
+            post :create, verification: { email: 'rick@example.com' }
           end
 
           it 'should show error message' do
@@ -317,10 +310,10 @@ describe AccountsController, type: :controller do
           end
         end
 
-        context 'user cannot sign in' do
+        context 'user is inactive' do
           before do
-            @person.update_attribute(:can_sign_in, false)
-            post :create, verification: {mobile_phone: '1234567899', carrier: 'AT&T'}
+            @person.update_attributes(status: :inactive)
+            post :create, verification: { mobile_phone: '1234567899', carrier: 'AT&T' }
           end
 
           it 'should show error message' do
@@ -401,6 +394,36 @@ describe AccountsController, type: :controller do
       context 'passwords do not match' do
         before do
           post :update, {person_id: @person.id, person: {email: 'foo@example.com', password: 'password', password_confirmation: 'mismatched'}}, {logged_in_id: @person.id}
+        end
+
+        it 'should be success' do
+          expect(response).to be_success
+        end
+
+        it 'should render edit template again' do
+          expect(response).to render_template(:edit)
+        end
+      end
+
+      context 'passwords too short' do
+        before do
+          Setting.set(1, 'Privacy', 'Minimum Password Characters', '7')
+          post :update, {person_id: @person.id, person: {email: 'foo@example.com', password: 'pass', password_confirmation: 'pass'}}, {logged_in_id: @person.id}
+        end
+
+        it 'should be success' do
+          expect(response).to be_success
+        end
+
+        it 'should render edit template again' do
+          expect(response).to render_template(:edit)
+        end
+      end
+
+      context 'passwords not strong enough' do
+        before do
+          Setting.set(1, 'Privacy', 'Require Strong Password', true)
+          post :update, {person_id: @person.id, person: {password: '123456', password_confirmation: '123456'}}, {logged_in_id: @person.id}
         end
 
         it 'should be success' do

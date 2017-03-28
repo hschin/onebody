@@ -9,17 +9,11 @@ describe MembershipsController, type: :controller do
 
     context 'given email param' do
       before do
-        allow(controller).to receive(:update).and_call_original
-        request.env['HTTP_REFERER'] = group_memberships_path(group)
-        get :show, {
-          group_id: group.id,
-          id: person.id,
-          email: 'on'
-        }, { logged_in_id: person.id }
+        get :show, { group_id: group.id, id: person.id, email: 'off' }, { logged_in_id: person.id }
       end
 
-      it 'calls #update' do
-        expect(controller).to have_received(:update)
+      it 'renders the email template' do
+        expect(controller).to render_template(:email)
       end
     end
   end
@@ -226,8 +220,8 @@ describe MembershipsController, type: :controller do
           expect(membership.reload.admin).to eq(true)
         end
 
-        it 'redirects back' do
-          expect(response).to be_redirect
+        it 'renders the js template' do
+          expect(response).to render_template('update_admin.js.erb')
         end
       end
 
@@ -266,8 +260,8 @@ describe MembershipsController, type: :controller do
           expect(membership.reload.admin).to eq(false)
         end
 
-        it 'redirects back' do
-          expect(response).to be_redirect
+        it 'renders the js template' do
+          expect(response).to render_template('update_admin.js.erb')
         end
       end
     end

@@ -65,6 +65,7 @@ module ApplicationHelper
   end
 
   def format_phone(phone, mobile = false)
+    return '' if phone.blank?
     format = Setting.get(:formats, mobile ? :mobile_phone : :phone)
     return phone if format.blank?
     groupings = format.scan(/d+/).map(&:length)
@@ -79,6 +80,7 @@ module ApplicationHelper
   module_function :format_phone
 
   def link_to_phone(phone, options = {})
+    return if phone.blank?
     label = options.delete(:label)
     label ||= format_phone(phone, options.delete(:mobile))
     link_to label, "tel:#{phone.digits_only}", options
@@ -133,7 +135,7 @@ module ApplicationHelper
       id:         params[:id],
       sort:       sort_params(sort)
     }.merge(
-      params.reject { |k| !keep_params.include?(k) }
+      keep_params == :all ? params.except(:controller, :action, :sort) : params.reject { |k| !keep_params.include?(k) }
     )
     url = url_for(options)
     link_to label, url
@@ -142,6 +144,16 @@ module ApplicationHelper
   def sort_params(sort)
     old_params = params[:sort].to_s.split(',')
     (sort.split(',') + old_params).uniq.join(',')
+  end
+
+  def alternate_sort_param(*alternates)
+    current = params[:sort].to_s.split(',').first
+    return alternates.first unless current.present?
+    current_index = alternates.index(current)
+    return alternates.first unless current_index
+    next_index = current_index + 1
+    return alternates.first if next_index >= alternates.size
+    alternates[next_index]
   end
 
   def date_format
@@ -187,6 +199,10 @@ module ApplicationHelper
     truncate(text, options.reverse_merge(separator: ' ', omission: '…'))
   end
 
+  def truncate_html(html, length:)
+    HTML_Truncator.truncate(html, length)
+  end
+
   def analytics_js
     if params[:controller] == 'administration/settings'
       # workaround for Safari bug (see https://github.com/churchio/onebody/issues/262)
@@ -205,6 +221,14 @@ module ApplicationHelper
           raise $1
         end
       end
+    end
+  end
+
+  def time_to_s(time, format, if_nil = '')
+    if time
+      time.to_s(format)
+    else
+      if_nil
     end
   end
 end

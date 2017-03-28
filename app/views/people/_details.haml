@@ -1,7 +1,14 @@
 %table.table
-  %tr.row-with-avatar
-    %td= link_to avatar_tag(@family), @family
-    %td= link_to t('people.show.details.family', family: @family.try(:name)), @family
+  - if @logged_in.admin?(:edit_profiles)
+    %tr
+      %td= t('people.show.details.created')
+      %td{ title: time_to_s(@person.created_at, :full) }= time_to_s(@person.created_at, :date)
+    %tr
+      %td= t('people.show.details.edited')
+      %td{ title: time_to_s(@person.updated_at, :full) }= time_to_s(@person.updated_at, :date)
+    %tr
+      %td= t('people.show.details.last_seen')
+      %td{ title: time_to_s(@person.last_seen_at, :full) }= time_to_s(@person.last_seen_at, :date)
   = show_attribute(:website) do
     %tr
       %td= t('people.show.details.website')
@@ -42,7 +49,9 @@
           Singapore #{@person.short_zip}
         - else
           == #{@person.city}, #{@person.state} #{@person.short_zip}
-  = show_attribute?(:birthday) do
+        %br
+        = link_to t('people.show.details.map'), "https://www.google.com/maps/place/#{@person.address.tr("\n","")} #{@person.city}, #{@person.state} #{@person.short_zip}/", :target => "_blank"
+  = show_attribute(:birthday) do
     %tr
       %td
         = t('people.show.details.birthday')
@@ -69,3 +78,9 @@
             = link_to(@person.facebook_url, target: '_blank') do
               = icon 'fa fa-facebook'
               = simple_url(@person.facebook_url, www: false)
+  = show_attribute(:about) do
+    %tr
+      %td
+        = t('people.show.details.about')
+      %td
+        = preserve_breaks @person.about

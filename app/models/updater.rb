@@ -15,6 +15,7 @@ class Updater
       last_name:            :approve,
       chinese_name:         :approve,
       suffix:               :approve,
+      alias:                :approve,
       gender:               :approve,
       mobile_phone:         :approve,
       work_phone:           :approve,
@@ -43,11 +44,9 @@ class Updater
       staff:                :admin,
       elder:                :admin,
       deacon:               :admin,
-      visible_:             :admin,
-      can_sign_in:          :admin,
-      full_access:          :admin,
       child:                :admin,
       custom_type:          :admin,
+      fields:               :admin,
       medical_notes:        :admin,
       can_pick_up:          :admin,
       cannot_pick_up:       :admin,
@@ -56,6 +55,9 @@ class Updater
       legacy_id:            :admin,
       legacy_family_id:     :admin,
       member_no:            :admin,
+      relationships:        :admin,
+      sequence:             :admin,
+      status:               :admin
     },
     family: {
       name:                 :approve,
@@ -73,7 +75,7 @@ class Updater
       email:                :admin,
       legacy_id:            :admin,
       barcode_id:           :admin,
-      alternate_barcode_id: :admin,
+      alternate_barcode_id: :admin
     }
   }
 
@@ -110,7 +112,7 @@ class Updater
     person.updates.create!(family_id: family.id, data: approval_params) if approval_params.any?
     success = person.update_attributes(person_params) && family.update_attributes(family_params)
     unless success
-      family.errors.full_messages.each { |m| person.errors.add(:base, m) }
+      family.errors.values.each { |m| person.errors.add(:base, m) }
     end
     success
   end
@@ -124,7 +126,8 @@ class Updater
   end
 
   def show_verification_link?
-    changes[:person].try(:[], :can_sign_in) and person.can_sign_in?
+    person.able_to_sign_in? &&
+      (changes[:person].try(:[], :email) || changes[:person].try(:[], :status))
   end
 
   private

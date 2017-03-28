@@ -26,8 +26,8 @@ class SearchesController < ApplicationController
     end
     respond_to do |format|
       format.html do
-        if @people.length == 1 and (params[:name] or params[:quick_name])
-          redirect_to person_path(id: @people.first)
+        if @people.any? && @people.first.name == params[:name] && params[:direct]
+          redirect_to @people.first
         else
           render action: 'create'
         end

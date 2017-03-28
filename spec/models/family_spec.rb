@@ -212,7 +212,7 @@ describe Family do
       )
     end
 
-    it 'appends the default country name on the end' do
+    it 'appends the country name on the end' do
       expect(family.geocoding_address).to eq('650 S. Peoria, Tulsa, OK, 74120, US')
     end
   end
@@ -234,8 +234,21 @@ describe Family do
         Geocoder::Lookup::Test.add_stub(
           '650 S. Peoria, Tulsa, OK, 74120, US', [
             {
-              'latitude'     => 36.151305,
-              'longitude'    => -95.975393,
+              'latitude'     => 1,
+              'longitude'    => 2,
+              'address'      => 'Tulsa, OK, USA',
+              'state'        => 'Oklahoma',
+              'state_code'   => 'OK',
+              'country'      => 'United States',
+              'country_code' => 'US'
+            }
+          ]
+        )
+        Geocoder::Lookup::Test.add_stub(
+          '100 N. Main, Bixby, OK, 74008, US', [
+            {
+              'latitude'     => 3,
+              'longitude'    => 4,
               'address'      => 'Tulsa, OK, USA',
               'state'        => 'Oklahoma',
               'state_code'   => 'OK',
@@ -247,23 +260,13 @@ describe Family do
       end
 
       it 'sets latitude and longitude' do
-        expect(family.latitude).to eq(36.151305)
-        expect(family.longitude).to eq(-95.975393)
+        expect(family.reload.attributes).to include(
+          'latitude'  => within(0.0001).of(1),
+          'longitude' => within(0.0001).of(2)
+        )
       end
 
       context 'address is removed' do
-        before do
-          Geocoder::Lookup::Test.add_stub(
-            "US", [
-              {
-                'precision' => 'APPROXIMATE',
-                'latitude'  => 35,
-                'longitude' => -95
-              }
-            ]
-          )
-        end
-
         before do
           family.address1 = ''
           family.city = ''
@@ -275,6 +278,40 @@ describe Family do
         it 'removes latitude and longitude' do
           expect(family.latitude).to be_nil
           expect(family.longitude).to be_nil
+        end
+      end
+
+      context 'address is changed' do
+        before do
+          family # create family
+          family.address1 = '100 N. Main'
+          family.city = 'Bixby'
+          family.state = 'OK'
+          family.zip = '74008'
+          family.save!
+        end
+
+        it 'changes the latitude and longitude' do
+          expect(family.reload.attributes).to include(
+            'latitude'  => within(0.0001).of(3),
+            'longitude' => within(0.0001).of(4)
+          )
+        end
+      end
+
+      context 'unrelated attribute is changed' do
+        before do
+          family # create family
+          Geocoder::Lookup::Test.reset
+          family.name = 'Jack Smith'
+          family.save!
+        end
+
+        it 'does not change the latitude or longitude' do
+          expect(family.reload.attributes).to include(
+            'latitude'  => within(0.0001).of(1),
+            'longitude' => within(0.0001).of(2)
+          )
         end
       end
     end

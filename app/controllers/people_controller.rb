@@ -23,15 +23,17 @@ class PeopleController < ApplicationController
     else
       @person = Person.where(id: params[:id]).includes(:family).first
     end
-    if params[:limited] or !@logged_in.full_access?
+    if params[:limited] || !@logged_in.active?
       render action: 'show_limited'
     elsif @person and @logged_in.can_read?(@person)
       @family = @person.family
+      if @family.nil?
+        @family_people = []
+      end
       if @person == @logged_in
-        # TODO eager load family here
-        @family_people = (@person.family.try(:people) || []).reject(&:deleted)
+        @family_people = @person.family.people.undeleted.where.not(id: @person.id)
       else
-        @family_people = @person.family.try(:visible_people) || []
+        @family_people = @person.family ? @person.family.visible_people.reject { |p| p.id == @person.id } : []
       end
       @offerings = @person.offerings.take(3)
       @albums = @person.albums.order(created_at: :desc)
@@ -64,7 +66,7 @@ class PeopleController < ApplicationController
         @family = Family.new
         @person = Person.new(family: @family)
       end
-      @person.set_default_visibility
+      @person.status = :active
     else
       render text: t('not_authorized'), layout: true, status: 401
     end
@@ -99,6 +101,7 @@ class PeopleController < ApplicationController
 
   def edit
     @person ||= Person.find(params[:id])
+    render(text: t('people.edit.no_family_error'), layout: true) && return unless @person.family
     if @logged_in.can_update?(@person)
       @family = @person.family
       @business_categories = Person.business_categories
@@ -156,34 +159,6 @@ class PeopleController < ApplicationController
     end
   end
 
-  def import
-    if @logged_in.admin?(:import_data) and Site.current.import_export_enabled?
-      if request.get?
-        @column_names = Person.importable_column_names
-      elsif request.post?
-        @records = Person.queue_import_from_csv_file(params[:file].read, params[:match_by_name], params[:attributes])
-        render action: 'import_queue'
-      elsif request.put?
-        @completed, @errored = Person.import_data(params)
-        render action: 'import_results'
-      end
-    else
-      render text: t('not_authorized'), layout: true, status: 401
-    end
-  end
-
-  def hashify
-    params.merge!(Hash.from_xml(request.body.read))
-    if @logged_in.admin?(:import_data) and Site.current.import_export_enabled?
-      ids = params[:hash][:legacy_id].to_s.split(',')
-      raise 'error' if ids.length > 1000
-      hashes = Person.hashify(legacy_ids: ids, attributes: params[:hash][:attrs].split(','), debug: params[:hash][:debug])
-      render xml: hashes.to_a
-    else
-      render text: t('not_authorized'), layout: true, status: 401
-    end
-  end
-
   def batch
     # post from families/show page
     if params[:family_id] and @logged_in.admin?(:edit_profiles)
@@ -192,20 +167,9 @@ class PeopleController < ApplicationController
         format.html { redirect_to family_path(params[:family_id]) }
         format.js   { render js: "location.replace('#{family_path(params[:family_id])}')" }
       end
-    # API for use by UpdateAgent
-    elsif @logged_in.admin?(:import_data) and Site.current.import_export_enabled?
-      xml_params = Hash.from_xml(request.body.read)['hash']
-      statuses = Person.update_batch(xml_params['records'], xml_params['options'] || {})
-      respond_to do |format|
-        format.xml { render xml: statuses }
-      end
     else
       render text: t('not_authorized'), layout: true, status: 401
     end
-  end
-
-  def schema
-    render xml: Person.columns.map { |c| {name: c.name, type: c.type} }
   end
 
   def testimony

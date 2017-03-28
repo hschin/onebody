@@ -28,11 +28,11 @@ module GroupsHelper
   end
 
   def group_categories
-    [[t('groups.edit.category.new'), '!']] + Group.categories.keys
+    [[t('groups.edit.category.new'), '!']] + Group.categories.keys.map { |k| [k, k] }
   end
 
   def must_request_group_join?(group)
-    not group.admin?(@logged_in) and @group.approval_required_to_join?
+    !group.admin?(@logged_in) && @group.approval_required_to_join?
   end
 
   def new_groups

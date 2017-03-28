@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -e
+
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+OS=$1
+
+mkdir -p /tmp/pkgr-cache
+
+# clone onebody
+cd /
+git clone https://github.com/churchio/onebody.git onebody
+cd onebody
+
+RUBY_VERSION=$(cat .ruby-version | tr -d '\n')
+ONEBODY_VERSION=$(cat VERSION | tr -d '\n')
+
+# explicitly set the ruby version
+sed -i "1iruby '$RUBY_VERSION'" Gemfile
+
+# tell bundler to use the local libxml
+bundle config --local build.nokogiri "--use-system-libraries --with-xml2-include=/usr/include/libxml2"
+bundle config --local build.nokogumbo "--use-system-libraries --with-xml2-include=/usr/include/libxml2"
+
+# build the package!
+pkgr package . --name=onebody --version=$ONEBODY_VERSION --force_os=$OS --debug --verbose
+mv *.deb /out/$OS

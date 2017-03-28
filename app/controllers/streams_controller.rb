@@ -5,7 +5,14 @@ class StreamsController < ApplicationController
   include TimelineHelper
 
   def show
-    redirect_to(@logged_in) and return unless @logged_in.full_access?
+    unless @logged_in.active?
+      redirect_to(@logged_in)
+      return
+    end
+    unless Setting.get(:features, :stream)
+      redirect_to('/search')
+      return
+    end
     if params[:stream_item_group_id]
       @stream_group = StreamItem.where(streamable_type: 'StreamItemGroup').find(params[:stream_item_group_id])
       @stream_items = @stream_group.items
@@ -27,7 +34,7 @@ class StreamsController < ApplicationController
           html: html_for_json,
           items: @stream_items,
           count: @count,
-          next: timeline_has_more?(@stream_items) ? next_timeline_url(@stream_items.current_page + 1) : nil
+          next: timeline_has_more?(@stream_items) ? next_timeline_path(@stream_items.current_page + 1) : nil
         }
       end
     end

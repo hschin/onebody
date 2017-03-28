@@ -11,73 +11,83 @@ describe Person do
 
     before { @person = FactoryGirl.create(:person) }
 
-    it 'should not allow bad email' do
+    it 'does not allow bad email' do
       BAD_EMAIL_ADDRESSES.each do |address|
         should_not allow_value(address).for(:email)
       end
     end
 
-    it 'should allow good email' do
+    it 'allows good email' do
       GOOD_EMAIL_ADDRESSES.each do |address|
-        should allow_value(address).for(:email)
+        allow_value(address).for(:email)
       end
     end
 
-    it 'should not allow bad business_email' do
+    it 'does not allow bad business_email' do
       BAD_EMAIL_ADDRESSES.each do |address|
         should_not allow_value(address).for(:business_email)
       end
     end
 
-    it 'should allow good business_email' do
+    it 'allows good business_email' do
       GOOD_EMAIL_ADDRESSES.each do |address|
-        should allow_value(address).for(:business_email)
+        allow_value(address).for(:business_email)
       end
     end
 
-    it 'should not allow bad alternate_email' do
+    it 'does not allow bad alternate_email' do
       BAD_EMAIL_ADDRESSES.each do |address|
         should_not allow_value(address).for(:alternate_email)
       end
     end
 
-    it 'should allow good alternate_email' do
+    it 'allows good alternate_email' do
       GOOD_EMAIL_ADDRESSES.each do |address|
-        should allow_value(address).for(:alternate_email)
+        allow_value(address).for(:alternate_email)
       end
     end
 
-    it 'should not allow bad website' do
+    it 'does not allow bad website' do
       BAD_WEB_ADDRESSES.each do |address|
         should_not allow_value(address).for(:website)
       end
     end
 
-    it 'should allow good website' do
+    it 'allows good website' do
       GOOD_WEB_ADDRESSES.each do |address|
-        should allow_value(address).for(:website)
+        allow_value(address).for(:website)
       end
     end
 
-    it 'should not allow bad business_website' do
+    it 'does not allow bad business_website' do
       BAD_WEB_ADDRESSES.each do |address|
         should_not allow_value(address).for(:business_website)
       end
     end
 
-    it 'should allow good business_website' do
+    it 'allows good business_website' do
       GOOD_WEB_ADDRESSES.each do |address|
         should allow_value(address).for(:business_website)
       end
     end
+
+    it 'allows good facebook_url' do
+      should allow_value('https://www.facebook.com/seven1m').for(:facebook_url)
+    end
+
+    it 'does not allow bad facebook_url' do
+      should_not allow_value('http://notfacebook.com/foo').for(:facebook_url)
+    end
   end
 
-  it 'should allow good facebook_url' do
-    should allow_value('https://www.facebook.com/seven1m').for(:facebook_url)
-  end
-
-  it 'should not allow bad facebook_url' do
-    should_not allow_value('http://notfacebook.com/foo').for(:facebook_url)
+  it 'accepts emoji in the name fields' do
+    person = FactoryGirl.create(
+      :person,
+      first_name: '😄😂😇😌😙😝🤓😏😟😣😤😐😧😳😢😓🤔🤢🤕👺',
+      last_name: '😄😂😇😌😙😝🤓😏😟😣😤😐😧😳😢😓🤔🤢🤕👺'
+    )
+    expect(person.reload.first_name).to eq('😄😂😇😌😙😝🤓😏😟😣😤😐😧😳😢😓🤔🤢🤕👺')
+    expect(person.last_name).to eq('😄😂😇😌😙😝🤓😏😟😣😤😐😧😳😢😓🤔🤢🤕👺')
   end
 
   context 'Email Address Sharing' do
@@ -350,7 +360,7 @@ describe Person do
   it "should properly translate validation errors" do
     @person = FactoryGirl.create(:person)
     expect(@person.update_attributes(website: 'bad/address')).to eq(false)
-    expect(@person.errors.full_messages).to eq([I18n.t("activerecord.errors.models.person.attributes.website.invalid")])
+    expect(@person.errors[:website]).to eq([I18n.t("activerecord.errors.models.person.attributes.website.invalid")])
   end
 
   context '#authenticate' do
@@ -395,6 +405,20 @@ describe Person do
 
       it 'should return false' do
         expect(@authenticated).to be_nil
+      end
+    end
+
+    context 'user with a nickname' do
+      before do
+        @person = FactoryGirl.create(:person, first_name: 'Saul', last_name: 'Tarsus', alias: 'Paul')
+      end
+
+      it 'should have the name Saul Tarsus' do
+        expect(@person.name).to eq('Saul Tarsus')
+      end
+
+      it 'should have the display with nickname of Saul Tarsus [Paul]' do
+        expect(@person.name_and_nick).to eq('Saul Tarsus [Paul]')
       end
     end
 
@@ -443,10 +467,6 @@ describe Person do
   end
 
   describe '#create_as_stream_item' do
-    before do
-      allow(StreamItemGroupJob).to receive(:perform_later)
-    end
-
     let!(:person) { FactoryGirl.create(:person) }
 
     it 'creates a new stream item' do
@@ -455,10 +475,50 @@ describe Person do
         'person_id' => person.id
       )
     end
+  end
 
-    it 'calls StreamItemGroup.perform_later' do
-      expect(StreamItemGroupJob).to \
-        have_received(:perform_later).with(Site.current, StreamItem.last.id)
+  describe '#update_stream_item' do
+    let!(:person) { FactoryGirl.create(:person) }
+    let(:stream_item_spy) { spy('stream_item') }
+
+    before do
+      allow(person).to receive(:stream_item).and_return(stream_item_spy)
+    end
+
+    context 'given no relevant changes' do
+      before do
+        person.reload
+        person.email = 'new@example.com'
+        person.save!
+      end
+
+      it 'does not update the stream item' do
+        expect(stream_item_spy).not_to have_received(:save!)
+      end
+    end
+
+    context 'given the email went away' do
+      before do
+        person.reload
+        person.email = ''
+        person.save!
+      end
+
+      it 'updates the stream item' do
+        expect(stream_item_spy).to have_received(:save!)
+      end
+    end
+
+    context 'given the name changed' do
+      before do
+        person.reload
+        person.suffix = 'Jr.'
+        person.save!
+      end
+
+      it 'updates the stream item' do
+        expect(stream_item_spy).to have_received(:save!)
+      end
     end
   end
 
@@ -489,122 +549,6 @@ describe Person do
         spouse.save
         expect(spouse.reload).to be_primary_emailer
         expect(husband.reload).to_not be_primary_emailer
-      end
-    end
-  end
-
-  describe '.update_batch' do
-    context 'given an existing record matching by legacy_id' do
-      let!(:person) { FactoryGirl.create(:person, legacy_id: 123) }
-
-      context do
-        before do
-          @result = Person.update_batch([
-            { 'legacy_id' => 123, 'first_name' => 'James' }
-          ])
-        end
-
-        it 'updates the record' do
-          expect(person.reload.first_name).to eq('James')
-        end
-
-        it 'returns status="saved"' do
-          expect(@result).to match_array(
-            include(
-              status:    'saved',
-              legacy_id: 123,
-              name:      'James Smith'
-            )
-          )
-        end
-      end
-
-      context 'given invalid data' do
-        before do
-          @result = Person.update_batch([
-            { 'legacy_id' => 123, 'first_name' => '' }
-          ])
-        end
-
-        it 'does not update the record' do
-          expect(person.reload.first_name).to eq('John')
-        end
-
-        it 'returns status="not saved"' do
-          expect(@result).to match_array(
-            include(
-              status:    'not saved',
-              legacy_id: 123,
-              name:      ' Smith',
-              error:     'The person must have a first name.'
-            )
-          )
-        end
-      end
-
-      context 'email was marked changed' do
-        before do
-          person.update_attributes(email_changed: true, email: 'old@example.com')
-          @result = Person.update_batch([
-            { 'legacy_id' => 123, 'first_name' => 'James', 'email' => 'new@example.com' }
-          ])
-        end
-
-        it 'does not overwrite the email address' do
-          expect(person.reload.email).to eq('old@example.com')
-        end
-
-        it 'returns status="saved with error"' do
-          expect(@result).to match_array(
-            include(
-              status:    'saved with error',
-              error:     'Newer email not overwritten: "old@example.com"',
-              legacy_id: 123,
-              name:      'James Smith'
-            )
-          )
-        end
-      end
-
-      context 'email was marked changed and now matches' do
-        before do
-          person.update_attributes(email_changed: true, email: 'new@example.com')
-          @result = Person.update_batch([
-            { 'legacy_id' => 123, 'first_name' => 'James', 'email' => 'new@example.com' }
-          ])
-        end
-
-        it 'does not overwrite the email address' do
-          expect(person.reload.attributes).to include(
-            'email_changed' => false,
-            'email'         => 'new@example.com'
-          )
-        end
-
-        it 'returns status="saved"' do
-          expect(@result).to match_array(
-            include(
-              status:    'saved',
-              legacy_id: 123,
-              name:      'James Smith'
-            )
-          )
-        end
-      end
-    end
-
-    context 'given no existing record' do
-      before do
-        Person.update_batch([
-          { 'legacy_id' => 123, 'first_name' => 'James', 'last_name' => 'Jones' }
-        ])
-      end
-
-      it 'creates the record' do
-        expect(Person.last.attributes).to include(
-          'legacy_id'  => 123,
-          'first_name' => 'James'
-        )
       end
     end
   end
@@ -649,9 +593,10 @@ describe Person do
     let(:existing) { FactoryGirl.create(:person) }
     let(:person)   { FactoryGirl.build(:person) }
 
-    context 'given an a collision in code generation' do
+    context 'given a collision in code generation' do
       before do
         existing.update_attribute(:feed_code, 'abc123')
+        person.family.save # saving the family calls SecureRandom.hex in the GeocoderJob, so get that out of the way
         allow(SecureRandom).to receive(:hex).and_return('abc123', 'xyz987')
       end
 
@@ -659,6 +604,27 @@ describe Person do
         person.save!
         expect(SecureRandom).to have_received(:hex).with(50).twice
         expect(person.feed_code).to eq('xyz987')
+      end
+    end
+  end
+
+  describe '#relationships=' do
+    context 'given a string' do
+      let(:person) { FactoryGirl.build(:person) }
+      let(:child)  { FactoryGirl.create(:person, legacy_id: 1001) }
+      let(:father) { FactoryGirl.create(:person, legacy_id: 1002) }
+      let(:neighbor) { FactoryGirl.create(:person, legacy_id: 1003) }
+
+      before do
+        person.relationships = "#{father.legacy_id}[father],#{child.legacy_id}[Son],#{neighbor.legacy_id}[Neighbor]"
+      end
+
+      it 'sets the attributes' do
+        expect(person.relationships.map(&:attributes)).to match_array([
+          include('name' => 'father', 'other_name' => nil,        'related_id' => father.id),
+          include('name' => 'son',    'other_name' => nil,        'related_id' => child.id),
+          include('name' => 'other',  'other_name' => 'Neighbor', 'related_id' => neighbor.id)
+        ])
       end
     end
   end
@@ -736,18 +702,57 @@ describe Person do
     end
   end
 
-  context '#generate_directory_pdf' do
-    let(:person) do
-      FactoryGirl.create(
-        :person,
-        mobile_phone: '1234567890',
-        visible_on_printed_directory: true
-      )
+  describe '#update_last_seen_at' do
+    context 'if it was already updated recently' do
+      let(:person) do
+        FactoryGirl.create(
+          :person,
+          last_seen_at: 10.minutes.ago
+        )
+      end
+
+      before do
+        allow(person).to receive(:update_column)
+        person.update_last_seen_at
+      end
+
+      it 'does nothing' do
+        expect(person).not_to have_received(:update_column)
+      end
     end
 
-    it 'generates a pdf' do
-      data = person.generate_directory_pdf.to_s
-      expect(data).to match(/\A%PDF\-1\.3/)
+    context 'it is currently nil' do
+      let(:person) do
+        FactoryGirl.create(
+          :person,
+          last_seen_at: nil
+        )
+      end
+
+      before do
+        person.update_last_seen_at
+      end
+
+      it 'updates to the current time' do
+        expect(person.reload.last_seen_at).to be_within(1).of(Time.current)
+      end
+    end
+
+    context 'it was updated a long time ago' do
+      let(:person) do
+        FactoryGirl.create(
+          :person,
+          last_seen_at: 2.hours.ago
+        )
+      end
+
+      before do
+        person.update_last_seen_at
+      end
+
+      it 'updates to the current time' do
+        expect(person.reload.last_seen_at).to be_within(1).of(Time.current)
+      end
     end
   end
 end

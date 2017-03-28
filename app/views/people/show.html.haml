@@ -62,6 +62,8 @@
                   %td= offering.date
                   %td= offering.offering_type
                   %td= offering.amount_cents
+  .col-lg-4.col-sm-6
+    = render 'family_box'
 
     - if @person.testimony.present?
       .box.box-solid.box-success.testimony
