@@ -1,4 +1,4 @@
-FROM ruby:2.3.3
+FROM ubuntu:14.04
 
 # install build tools
 RUN apt-get update
