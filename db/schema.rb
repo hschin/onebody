@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150827010140) do
+ActiveRecord::Schema.define(version: 20170315033421) do
 
   create_table "admins", force: :cascade do |t|
     t.datetime "created_at"
@@ -152,6 +152,7 @@ ActiveRecord::Schema.define(version: 20150827010140) do
     t.integer  "document_folder_id", limit: 4
     t.integer  "group_id",           limit: 4
     t.datetime "created_at"
+    t.integer  "site_id",            limit: 4
   end
 
   add_index "document_folder_groups", ["document_folder_id"], name: "index_document_folder_groups_on_document_folder_id", using: :btree
@@ -170,17 +171,22 @@ ActiveRecord::Schema.define(version: 20150827010140) do
   end
 
   create_table "documents", force: :cascade do |t|
-    t.string   "name",              limit: 255
-    t.string   "description",       limit: 1000
-    t.integer  "folder_id",         limit: 4
-    t.string   "file_file_name",    limit: 255
-    t.string   "file_content_type", limit: 255
-    t.string   "file_fingerprint",  limit: 50
-    t.integer  "file_file_size",    limit: 4
+    t.string   "name",                 limit: 255
+    t.string   "description",          limit: 1000
+    t.integer  "folder_id",            limit: 4
+    t.string   "file_file_name",       limit: 255
+    t.string   "file_content_type",    limit: 255
+    t.string   "file_fingerprint",     limit: 50
+    t.integer  "file_file_size",       limit: 4
     t.datetime "file_updated_at"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "site_id",           limit: 4
+    t.integer  "site_id",              limit: 4
+    t.string   "preview_file_name",    limit: 255
+    t.string   "preview_content_type", limit: 255
+    t.string   "preview_fingerprint",  limit: 50
+    t.integer  "preview_file_size",    limit: 4
+    t.datetime "preview_updated_at"
   end
 
   create_table "families", force: :cascade do |t|
@@ -212,7 +218,8 @@ ActiveRecord::Schema.define(version: 20150827010140) do
     t.string   "country",              limit: 2
   end
 
-  add_index "families", ["last_name", "name"], name: "index_family_names", using: :btree
+  add_index "families", ["last_name", "name"], name: "index_family_names", length: {"last_name"=>191, "name"=>191}, using: :btree
+  add_index "families", ["legacy_id"], name: "index_families_on_legacy_id", using: :btree
 
   create_table "friendship_requests", force: :cascade do |t|
     t.integer  "person_id",  limit: 4
@@ -273,7 +280,6 @@ ActiveRecord::Schema.define(version: 20150827010140) do
     t.boolean  "private",                                 default: false
     t.string   "address",                   limit: 255
     t.boolean  "members_send",                            default: true
-    t.integer  "leader_id",                 limit: 4
     t.datetime "updated_at"
     t.boolean  "hidden",                                  default: false
     t.boolean  "approved",                                default: false
@@ -305,31 +311,26 @@ ActiveRecord::Schema.define(version: 20150827010140) do
   add_index "groups", ["category"], name: "index_groups_on_category", using: :btree
   add_index "groups", ["site_id"], name: "index_site_id_on_groups", using: :btree
 
-  create_table "import_attributes", force: :cascade do |t|
-    t.integer "site_id",       limit: 4
-    t.integer "import_id",     limit: 4
-    t.integer "import_row_id", limit: 4
-    t.string  "name",          limit: 255,   null: false
-    t.text    "value",         limit: 65535
-    t.integer "sequence",      limit: 4,     null: false
-    t.string  "error_reasons", limit: 255
-  end
-
   create_table "import_rows", force: :cascade do |t|
     t.integer "site_id",           limit: 4
     t.integer "import_id",         limit: 4
-    t.integer "sequence",          limit: 4,                    null: false
-    t.string  "error_reasons",     limit: 1000
+    t.integer "sequence",          limit: 4,                     null: false
     t.integer "person_id",         limit: 4
-    t.boolean "created_person",                 default: false
-    t.boolean "created_family",                 default: false
-    t.boolean "updated_person",                 default: false
-    t.boolean "updated_family",                 default: false
+    t.boolean "created_person",                  default: false
+    t.boolean "created_family",                  default: false
+    t.boolean "updated_person",                  default: false
+    t.boolean "updated_family",                  default: false
     t.integer "family_id",         limit: 4
     t.integer "matched_person_by", limit: 4
     t.integer "matched_family_by", limit: 4
     t.integer "status",            limit: 4
+    t.text    "import_attributes", limit: 65535
+    t.text    "attribute_changes", limit: 65535
+    t.text    "attribute_errors",  limit: 65535
+    t.boolean "errored",                         default: false
   end
+
+  add_index "import_rows", ["site_id", "import_id"], name: "index_import_rows_on_site_id_and_import_id", using: :btree
 
   create_table "imports", force: :cascade do |t|
     t.integer  "site_id",         limit: 4
@@ -344,6 +345,7 @@ ActiveRecord::Schema.define(version: 20150827010140) do
     t.datetime "updated_at",                                null: false
     t.datetime "completed_at"
     t.integer  "row_count",       limit: 4,     default: 0
+    t.integer  "flags",           limit: 4,     default: 0, null: false
   end
 
   create_table "jobs", force: :cascade do |t|
@@ -380,6 +382,7 @@ ActiveRecord::Schema.define(version: 20150827010140) do
     t.boolean  "auto",                             default: false
     t.datetime "created_at"
     t.text     "roles",              limit: 65535
+    t.boolean  "leader",                           default: false
   end
 
   add_index "memberships", ["group_id"], name: "index_memberships_on_group_id", using: :btree
@@ -393,11 +396,11 @@ ActiveRecord::Schema.define(version: 20150827010140) do
     t.datetime "updated_at"
     t.integer  "parent_id",    limit: 4
     t.string   "subject",      limit: 255
-    t.text     "body",         limit: 65535
-    t.boolean  "share_email",                default: false
+    t.text     "body",         limit: 16777215
+    t.boolean  "share_email",                   default: false
     t.integer  "code",         limit: 4
     t.integer  "site_id",      limit: 4
-    t.text     "html_body",    limit: 65535
+    t.text     "html_body",    limit: 16777215
   end
 
   add_index "messages", ["created_at"], name: "index_messages_on_created_at", using: :btree
@@ -463,106 +466,107 @@ ActiveRecord::Schema.define(version: 20150827010140) do
   end
 
   add_index "pages", ["parent_id"], name: "index_pages_on_parent_id", using: :btree
-  add_index "pages", ["path"], name: "index_pages_on_path", using: :btree
+  add_index "pages", ["path"], name: "index_pages_on_path", length: {"path"=>191}, using: :btree
 
   create_table "people", force: :cascade do |t|
-    t.integer  "legacy_id",                    limit: 4
-    t.integer  "family_id",                    limit: 4
-    t.integer  "position",                     limit: 4
-    t.string   "gender",                       limit: 6
-    t.string   "first_name",                   limit: 255
-    t.string   "last_name",                    limit: 255
-    t.string   "suffix",                       limit: 25
-    t.string   "mobile_phone",                 limit: 25
-    t.string   "work_phone",                   limit: 25
-    t.string   "fax",                          limit: 25
+    t.integer  "legacy_id",                limit: 4
+    t.integer  "family_id",                limit: 4
+    t.integer  "position",                 limit: 4
+    t.string   "gender",                   limit: 6
+    t.string   "first_name",               limit: 255
+    t.string   "last_name",                limit: 255
+    t.string   "suffix",                   limit: 25
+    t.string   "mobile_phone",             limit: 25
+    t.string   "work_phone",               limit: 25
+    t.string   "fax",                      limit: 25
     t.datetime "birthday"
-    t.string   "email",                        limit: 255
-    t.boolean  "email_changed",                              default: false
-    t.string   "website",                      limit: 255
-    t.text     "classes",                      limit: 65535
-    t.string   "shepherd",                     limit: 255
-    t.string   "mail_group",                   limit: 1
-    t.string   "encrypted_password",           limit: 100
-    t.string   "business_name",                limit: 100
-    t.text     "business_description",         limit: 65535
-    t.string   "business_phone",               limit: 25
-    t.string   "business_email",               limit: 255
-    t.string   "business_website",             limit: 255
-    t.text     "about",                        limit: 65535
-    t.text     "testimony",                    limit: 65535
-    t.boolean  "share_mobile_phone",                         default: false
-    t.boolean  "share_work_phone",                           default: false
-    t.boolean  "share_fax",                                  default: false
-    t.boolean  "share_email",                                default: false
-    t.boolean  "share_birthday",                             default: true
+    t.string   "email",                    limit: 255
+    t.boolean  "email_changed",                          default: false
+    t.string   "website",                  limit: 255
+    t.text     "classes",                  limit: 65535
+    t.string   "shepherd",                 limit: 255
+    t.string   "mail_group",               limit: 1
+    t.string   "encrypted_password",       limit: 100
+    t.string   "business_name",            limit: 100
+    t.text     "business_description",     limit: 65535
+    t.string   "business_phone",           limit: 25
+    t.string   "business_email",           limit: 255
+    t.string   "business_website",         limit: 255
+    t.text     "about",                    limit: 65535
+    t.text     "testimony",                limit: 65535
+    t.boolean  "share_mobile_phone",                     default: false
+    t.boolean  "share_work_phone",                       default: false
+    t.boolean  "share_fax",                              default: false
+    t.boolean  "share_email",                            default: false
+    t.boolean  "share_birthday",                         default: true
     t.datetime "anniversary"
     t.datetime "updated_at"
-    t.string   "alternate_email",              limit: 255
-    t.integer  "email_bounces",                limit: 4,     default: 0
-    t.string   "business_category",            limit: 100
-    t.boolean  "account_frozen",                             default: false
-    t.boolean  "messages_enabled",                           default: true
-    t.string   "business_address",             limit: 255
-    t.string   "flags",                        limit: 255
-    t.boolean  "visible",                                    default: true
-    t.string   "parental_consent",             limit: 255
-    t.integer  "admin_id",                     limit: 4
-    t.boolean  "friends_enabled",                            default: true
-    t.boolean  "member",                                     default: false
-    t.boolean  "staff",                                      default: false
-    t.boolean  "elder",                                      default: false
-    t.boolean  "deacon",                                     default: false
-    t.boolean  "can_sign_in",                                default: false
-    t.boolean  "visible_to_everyone",                        default: false
-    t.boolean  "visible_on_printed_directory",               default: false
-    t.boolean  "full_access",                                default: false
-    t.integer  "legacy_family_id",             limit: 4
-    t.string   "feed_code",                    limit: 50
-    t.boolean  "share_activity",                             default: true
-    t.integer  "site_id",                      limit: 4
-    t.string   "twitter_account",              limit: 100
-    t.string   "api_key",                      limit: 50
-    t.string   "salt",                         limit: 50
-    t.boolean  "deleted",                                    default: false, null: false
+    t.string   "alternate_email",          limit: 255
+    t.integer  "email_bounces",            limit: 4,     default: 0
+    t.string   "business_category",        limit: 100
+    t.boolean  "account_frozen",                         default: false
+    t.boolean  "messages_enabled",                       default: true
+    t.string   "business_address",         limit: 255
+    t.string   "flags",                    limit: 255
+    t.boolean  "visible",                                default: true
+    t.string   "parental_consent",         limit: 255
+    t.integer  "admin_id",                 limit: 4
+    t.boolean  "friends_enabled",                        default: true
+    t.boolean  "member",                                 default: false
+    t.boolean  "staff",                                  default: false
+    t.boolean  "elder",                                  default: false
+    t.boolean  "deacon",                                 default: false
+    t.integer  "legacy_family_id",         limit: 4
+    t.string   "feed_code",                limit: 50
+    t.boolean  "share_activity",                         default: true
+    t.integer  "site_id",                  limit: 4
+    t.string   "twitter_account",          limit: 100
+    t.string   "api_key",                  limit: 50
+    t.string   "salt",                     limit: 50
+    t.boolean  "deleted",                                default: false, null: false
     t.boolean  "child"
-    t.string   "custom_type",                  limit: 100
-    t.text     "custom_fields",                limit: 65535
-    t.string   "can_pick_up",                  limit: 100
-    t.string   "cannot_pick_up",               limit: 100
-    t.string   "medical_notes",                limit: 200
-    t.string   "relationships_hash",           limit: 40
-    t.string   "photo_file_name",              limit: 255
-    t.string   "photo_content_type",           limit: 255
-    t.string   "photo_fingerprint",            limit: 50
-    t.integer  "photo_file_size",              limit: 4
+    t.string   "custom_type",              limit: 100
+    t.text     "custom_fields",            limit: 65535
+    t.string   "can_pick_up",              limit: 100
+    t.string   "cannot_pick_up",           limit: 100
+    t.string   "medical_notes",            limit: 200
+    t.string   "relationships_hash",       limit: 40
+    t.string   "photo_file_name",          limit: 255
+    t.string   "photo_content_type",       limit: 255
+    t.string   "photo_fingerprint",        limit: 50
+    t.integer  "photo_file_size",          limit: 4
     t.datetime "photo_updated_at"
-    t.string   "description",                  limit: 25
-    t.boolean  "share_anniversary",                          default: true
-    t.boolean  "share_address",                              default: true
-    t.boolean  "share_home_phone",                           default: true
-    t.string   "password_hash",                limit: 255
-    t.string   "password_salt",                limit: 255
+    t.string   "description",              limit: 25
+    t.boolean  "share_anniversary",                      default: true
+    t.boolean  "share_address",                          default: true
+    t.boolean  "share_home_phone",                       default: true
+    t.string   "password_hash",            limit: 255
+    t.string   "password_salt",            limit: 255
     t.datetime "created_at"
-    t.string   "facebook_url",                 limit: 255
-    t.string   "twitter",                      limit: 15
-    t.integer  "incomplete_tasks_count",       limit: 4,     default: 0
+    t.string   "facebook_url",             limit: 255
+    t.string   "twitter",                  limit: 15
+    t.integer  "incomplete_tasks_count",   limit: 4,     default: 0
     t.boolean  "primary_emailer"
-    t.string   "chinese_name",                 limit: 255
-    t.string   "congregation",                 limit: 255
+    t.string   "chinese_name",             limit: 255
+    t.string   "congregation",             limit: 255
     t.date     "baptism_date"
     t.date     "confirmation_date"
-    t.string   "status",                       limit: 255
-    t.string   "member_no",                    limit: 255
-    t.integer  "last_seen_stream_item_id",     limit: 4
-    t.integer  "last_seen_group_id",           limit: 4
-    t.string   "provider",                     limit: 255
-    t.string   "uid",                          limit: 255
+    t.string   "membership_status",        limit: 255
+    t.string   "member_no",                limit: 255
+    t.integer  "last_seen_stream_item_id", limit: 4
+    t.integer  "last_seen_group_id",       limit: 4
+    t.string   "provider",                 limit: 255
+    t.string   "uid",                      limit: 255
+    t.integer  "status",                   limit: 4,     default: 0
+    t.string   "alias",                    limit: 255
+    t.datetime "last_seen_at"
   end
 
   add_index "people", ["admin_id"], name: "index_admin_id_on_people", using: :btree
   add_index "people", ["business_category"], name: "index_business_category_on_people", using: :btree
+  add_index "people", ["email"], name: "index_people_on_email", length: {"email"=>191}, using: :btree
   add_index "people", ["family_id"], name: "index_people_on_family_id", using: :btree
+  add_index "people", ["legacy_id"], name: "index_people_on_legacy_id", using: :btree
   add_index "people", ["site_id", "feed_code"], name: "index_people_on_site_id_and_feed_code", using: :btree
   add_index "people", ["site_id"], name: "index_site_id_on_people", using: :btree
 
@@ -679,7 +683,7 @@ ActiveRecord::Schema.define(version: 20150827010140) do
     t.datetime "created_at"
   end
 
-  add_index "sessions", ["session_id"], name: "index_sessions_on_session_id", using: :btree
+  add_index "sessions", ["session_id"], name: "index_sessions_on_session_id", length: {"session_id"=>191}, using: :btree
 
   create_table "settings", force: :cascade do |t|
     t.string   "section",     limit: 100
@@ -725,12 +729,12 @@ ActiveRecord::Schema.define(version: 20150827010140) do
     t.string   "email_host",            limit: 255
   end
 
-  add_index "sites", ["host"], name: "index_sites_on_host", using: :btree
+  add_index "sites", ["host"], name: "index_sites_on_host", length: {"host"=>191}, using: :btree
 
   create_table "stream_items", force: :cascade do |t|
     t.integer  "site_id",              limit: 4
     t.string   "title",                limit: 500
-    t.text     "body",                 limit: 65535
+    t.text     "body",                 limit: 16777215
     t.text     "context",              limit: 65535
     t.integer  "person_id",            limit: 4
     t.integer  "group_id",             limit: 4
@@ -739,7 +743,7 @@ ActiveRecord::Schema.define(version: 20150827010140) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.boolean  "shared"
-    t.boolean  "text",                               default: false
+    t.boolean  "text",                                  default: false
     t.boolean  "is_public"
     t.integer  "stream_item_group_id", limit: 4
   end
@@ -747,7 +751,7 @@ ActiveRecord::Schema.define(version: 20150827010140) do
   add_index "stream_items", ["created_at"], name: "index_stream_items_on_created_at", using: :btree
   add_index "stream_items", ["group_id"], name: "index_stream_items_on_group_id", using: :btree
   add_index "stream_items", ["person_id"], name: "index_stream_items_on_person_id", using: :btree
-  add_index "stream_items", ["streamable_type", "streamable_id"], name: "index_stream_items_on_streamable_type_and_streamable_id", using: :btree
+  add_index "stream_items", ["streamable_type", "streamable_id"], name: "index_stream_items_on_streamable_type_and_streamable_id", length: {"streamable_type"=>191, "streamable_id"=>nil}, using: :btree
 
   create_table "sync_items", force: :cascade do |t|
     t.integer "site_id",        limit: 4
@@ -762,7 +766,7 @@ ActiveRecord::Schema.define(version: 20150827010140) do
   end
 
   add_index "sync_items", ["sync_id"], name: "index_sync_id_on_sync_items", using: :btree
-  add_index "sync_items", ["syncable_type", "syncable_id"], name: "index_syncable_on_sync_items", using: :btree
+  add_index "sync_items", ["syncable_type", "syncable_id"], name: "index_syncable_on_sync_items", length: {"syncable_type"=>191, "syncable_id"=>nil}, using: :btree
 
   create_table "syncs", force: :cascade do |t|
     t.integer  "site_id",       limit: 4
@@ -784,7 +788,7 @@ ActiveRecord::Schema.define(version: 20150827010140) do
   end
 
   add_index "taggings", ["tag_id"], name: "index_taggings_on_tag_id", using: :btree
-  add_index "taggings", ["taggable_id", "taggable_type"], name: "index_taggings_on_taggable_id_and_taggable_type", using: :btree
+  add_index "taggings", ["taggable_id", "taggable_type"], name: "index_taggings_on_taggable_id_and_taggable_type", length: {"taggable_id"=>nil, "taggable_type"=>191}, using: :btree
 
   create_table "tags", force: :cascade do |t|
     t.string   "name",       limit: 50
@@ -803,6 +807,7 @@ ActiveRecord::Schema.define(version: 20150827010140) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer  "position",    limit: 4
+    t.boolean  "group_scope"
   end
 
   create_table "twitter_messages", force: :cascade do |t|
