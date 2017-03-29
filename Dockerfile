@@ -31,7 +31,7 @@ RUN chown -R onebody /var/www/onebody
 # install gems
 USER onebody
 WORKDIR /var/www/onebody
-RUN bundle install
+RUN bundle install --without development test
 RUN gem install thin --no-rdoc --no-ri
 
 # add rest of source
