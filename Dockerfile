@@ -53,7 +53,7 @@ USER onebody
 
 # compile assets
 WORKDIR /var/www/onebody
-RUN bundle exec rake assets:precompile RAILS_ENV=production
+RUN bundle exec rake assets:precompile
 
 # share port
 EXPOSE 3000
