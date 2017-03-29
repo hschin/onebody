@@ -9,7 +9,7 @@ RUN apt-get clean
 RUN apt-get install -y software-properties-common
 RUN apt-add-repository -y ppa:brightbox/ruby-ng
 RUN apt-get update
-RUN apt-get install -y ruby2.3
+RUN apt-get install -y ruby2.3 ruby2.3-dev
 RUN gem install bundler --no-rdoc --no-ri
 
 # set up user
