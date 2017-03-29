@@ -1,5 +1,6 @@
 class AddStatusToPeople < ActiveRecord::Migration
   def up
+    rename_column :people, :status, :membership_status
     add_column :people, :status, :integer
 
     Person.reset_column_information
@@ -53,6 +54,7 @@ class AddStatusToPeople < ActiveRecord::Migration
     puts
 
     remove_column :people, :status
+    rename_column :people, :membership_status, :status
   end
 
   private
