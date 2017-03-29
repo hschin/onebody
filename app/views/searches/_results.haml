@@ -14,18 +14,6 @@
 
 - if @people and @people.any?
 
-  - if @logged_in.full_access?
-    .row
-      - @people.each do |person|
-        .col-lg-2-4.col-sm-4.col-xs-6
-          = link_to person do
-            .dir-tn{ style: 'overflow: hidden; max-height: 200px; max-width: 200px; height: 200px'}
-              = avatar_tag person, fallback_to_family: true, size: :medium
-            %p.center{ style: 'height:50px' }
-              = person.chinese_name
-              %br
-              = person.name
-
   - if @logged_in.active?
     %table.table.search-results
       %tr
@@ -55,6 +43,8 @@
                 = link_to person.business_category, search_path(business: true, category: person.business_category)
           - else
             %td
+              = link_to person.chinese_name, person
+              %br
               = link_to person.name_and_nick, person
               - unless person.visible?
                 %i.fa.fa-lock
