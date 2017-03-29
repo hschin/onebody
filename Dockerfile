@@ -9,7 +9,7 @@ RUN apt-get clean
 RUN apt-get install -y software-properties-common
 RUN apt-add-repository -y ppa:brightbox/ruby-ng
 RUN apt-get update
-RUN apt-get install -y ruby2.1 ruby2.1-dev
+RUN apt-get install -y ruby2.3.3
 RUN gem install bundler --no-rdoc --no-ri
 
 # set up user
@@ -53,7 +53,7 @@ USER onebody
 
 # compile assets
 WORKDIR /var/www/onebody
-RUN bundle exec rake assets:precompile RAILS_ENV=production
+RUN bundle exec bin/rake assets:precompile RAILS_ENV=production
 
 # share port
 EXPOSE 3000
