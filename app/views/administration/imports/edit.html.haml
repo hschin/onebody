@@ -1,6 +1,6 @@
 = render 'heading'
 
-= form_for [:administration, @import] do |form|
+= form_for(@import, url: administration_import_path(@import), html: { method: "patch" }) do |form|
   = hidden_field_tag :status, 'matched'
 
   .form-group
