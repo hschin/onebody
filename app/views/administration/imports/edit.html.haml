@@ -1,6 +1,6 @@
 = render 'heading'
 
-= form_for(@import, url: administration_import_path(@import), html: { method: "patch" }) do |form|
+= form_for(@import, url: administration_import_path(@import), html: { method: "put" }) do |form|
   = hidden_field_tag :status, 'matched'
 
   .form-group
@@ -40,7 +40,7 @@
     = button_tag id: 'btn-preview', class: 'btn btn-success' do
       = t('.save.button')
       = icon 'fa fa-arrow-right'
-    = button_tag id: 'btn-execute', class: 'btn btn-danger', data: { method: 'patch', confirm: t('are_you_sure') }, style: 'display:none' do
+    = button_tag id: 'btn-execute', class: 'btn btn-danger', data: { method: 'put', confirm: t('are_you_sure') }, style: 'display:none' do
       = icon 'fa fa-bolt'
       = t('administration.imports.show.execute.button')
     = check_box_tag :dont_preview
