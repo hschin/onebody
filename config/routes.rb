@@ -1,7 +1,4 @@
 OneBody::Application.routes.draw do
-
-  root to: redirect('/stream')
-
   resource :account do
     member do
       get :verify_code
@@ -178,6 +175,9 @@ OneBody::Application.routes.draw do
   get '/admin/reports' => 'administration/reports#index'
 
   namespace :administration, path: :admin do
+    resources :imports do
+      patch :execute, on: :member
+    end
     resources :emails do
       collection do
         put :batch
@@ -206,12 +206,8 @@ OneBody::Application.routes.draw do
         put :batch
       end
     end
-    resources :imports do
-      patch :execute, on: :member
-    end
     resources :updates, :admins, :membership_requests
     namespace :checkin do
-      root to: 'dashboards#show'
       resource :dashboard
       resources :groups do
         put :batch, on: :collection
@@ -221,6 +217,8 @@ OneBody::Application.routes.draw do
         resources :groups
       end
       resources :cards, :auths, :labels
+
+      root to: 'dashboards#show'
     end
     resources :custom_fields
   end
@@ -236,4 +234,6 @@ OneBody::Application.routes.draw do
   get '/auth/facebook/callback'  => 'sessions#create_from_external_provider'
   post '/auth/facebook/callback' => 'sessions#create_from_external_provider'
   get '/auth/:provider/setup'    => 'sessions#setup_omniauth'
+
+  root to: redirect('/stream')
 end
