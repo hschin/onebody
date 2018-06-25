@@ -71,6 +71,10 @@ en:
       twitter:
         placeholder: '@username'
       status: "Status"
+      account_status: "Account Status"
+      membership_status: "Membership Status"
+      baptism_date: "Baptism Date"
+      confirmation_date: "Confirmation Date"
       status_help:
         inactive: "Inactive people cannot sign in and are not visible to anyone on the site except administrators."
         pending: "Pending people can sign in and look up limited contact info for members."
