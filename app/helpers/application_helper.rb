@@ -231,4 +231,29 @@ module ApplicationHelper
       if_nil
     end
   end
+
+  def options_from_i18n(key)
+    I18n.t(key).invert
+  rescue I18n::MissingTranslationData
+    I18n.locale = 'en'
+    result = I18n.t(key).invert
+    OneBody.set_locale
+    result
+  end
+
+  def connection_secured?
+    (request.headers['HTTP_X_FORWARDED_PROTO'] || request.scheme) == 'https'
+  end
+
+  def connection_is_proxied_but_protocol_unknown?
+    request.headers['HTTP_X_FORWARDED_FOR'] && request.headers['HTTP_X_FORWARDED_PROTO'].nil?
+  end
+
+  def tls_warning(email_setup: false)
+    return if connection_secured?
+    render partial: 'layouts/tls_warning', locals: {
+      email_setup: email_setup,
+      proxy_missing_protocol_header: connection_is_proxied_but_protocol_unknown?
+    }
+  end
 end

@@ -3,14 +3,26 @@
 - content_for :sub_title do
   = t('admin.dashboard.sub_title', version: OneBody.current_version)
 
+= tls_warning
+
 - unless OneBody.up_to_date?
-  .alert.alert-warning
-    = icon 'fa fa-warning'
+  .alert.alert-info
+    %h4
+      = icon 'fa fa-info-circle'
+      = t('admin.dashboard.version_alert.heading')
     %p= t('admin.dashboard.version_alert.intro_html',
           version: OneBody.latest_version,
           url: "https://github.com/churchio/onebody/releases/tag/#{OneBody.latest_version}")
     %p= link_to t('admin.dashboard.version_alert.download_button'),
                 'https://github.com/churchio/onebody/wiki/Installation#how-to-upgrade'
+
+- unless OneBody.email_configured?
+  .alert.alert-warning
+    %h4
+      = icon 'fa fa-warning'
+      = t('admin.dashboard.email_config_alert.heading')
+    %p= t('admin.dashboard.email_config_alert.intro')
+    %p= link_to t('admin.dashboard.email_config_alert.button'), administration_email_setup_path
 
 .collapsable-heading
   %h2= t('admin.actionables.heading')

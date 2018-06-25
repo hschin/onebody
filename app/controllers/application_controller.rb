@@ -180,9 +180,10 @@ class ApplicationController < ActionController::Base
 
   def safe_redirect_path(url)
     uri = URI.parse(url)
-    uri.path.tap do |path|
-      path << '?' + uri.query if uri.query
-    end
+    path = uri.path
+    path << '?' + uri.query if uri.query
+    path = "/#{path}" unless path.start_with?('/')
+    path
   end
 
   def add_errors_to_flash(record)
@@ -223,5 +224,15 @@ class ApplicationController < ActionController::Base
     Pusher.scheme = Setting.get(:pusher, :api_scheme)
     Pusher.host   = Setting.get(:pusher, :api_host)
     Pusher.port   = Setting.get(:pusher, :api_port).to_i
+  end
+
+  def render_message(message, layout: true, callout: nil, status: 200)
+    @narrow = true
+    if callout
+      message = view_context.content_tag(:div, class: "callout callout-#{callout}") do
+        message.html_safe
+      end
+    end
+    render text: message, layout: layout, status: status
   end
 end

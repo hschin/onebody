@@ -73,8 +73,19 @@ en:
       heading: "Admin Dashboard"
       sub_title: "OneBody %{version}"
       version_alert:
+        heading: "Outdated Version"
         intro_html: "A newer version of OneBody is available: <a href='%{url}'>%{version}</a>"
         download_button: "How to Upgrade"
+      email_config_alert:
+        heading: "Email Not Configured"
+        intro: "Email sending and receiving is not set up yet."
+        button: "Configure Email"
+      tls_config_alert:
+        heading: "Site Not Secure"
+        intro: "TLS (SSL) is not set up, so this site is not secure. Users' sessions can be hijacked and their passwords snooped by bad guys."
+        email_setup_note: "Email incoming from Mailgun will also be transfered without encryption. Please secure your site before configuring email."
+        proxy_missing_protocol_header_note_html: "If your connection is indeed secured, then you may need to update your nginx proxy config as instructed <a href='https://github.com/churchio/onebody/blob/master/CHANGELOG.md#380-unreleased'>here</a>."
+        button: "Learn More"
 
     offering:
       heading: "Offerings"
@@ -355,6 +366,9 @@ en:
         Language:
           name: Language
           description: "Language for interface elements. <a href='%{url}' target='_blank'>You can help!</a>"
+        Bible Translation:
+          name: Bible Translation
+          description: "When fetching verses from <a href='https://bible-api.com'>bible-api.com</a>, request this translation."
         Time Zone:
           name: Time Zone
           description: Set to properly display dates and times on the site.

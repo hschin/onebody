@@ -120,9 +120,6 @@ OneBody::Application.routes.draw do
 
   resource :emails
 
-  get 'setup_email' => 'emails#create_route'
-  put 'setup_email' => 'emails#create_route'
-
   resources :tags, only: :show
 
   resources :pictures, :prayer_signups, :authentications, :shares,
@@ -221,6 +218,7 @@ OneBody::Application.routes.draw do
       root to: 'dashboards#show'
     end
     resources :custom_fields
+    resource :email_setup
   end
 
   resource :checkin, controller: 'checkin/checkins'
