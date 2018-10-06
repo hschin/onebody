@@ -58,6 +58,7 @@ class Updater
       membership_status:    :admin,
       baptism_date:         :admin,
       confirmation_date:    :admin,
+      membership_transfer_date:   :admin,
       relationships:        :admin,
       sequence:             :admin,
       status:               :admin

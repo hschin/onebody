@@ -11,6 +11,7 @@ module Concerns
           chinese_name
           baptism_date
           confirmation_date
+          membership_transfer_date
           status
           mobile_phone
           work_phone

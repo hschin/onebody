@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170406035130) do
+ActiveRecord::Schema.define(version: 20181006151831) do
 
   create_table "admins", force: :cascade do |t|
     t.datetime "created_at"
@@ -560,6 +560,7 @@ ActiveRecord::Schema.define(version: 20170406035130) do
     t.integer  "status",                   limit: 4,     default: 0
     t.string   "alias",                    limit: 255
     t.datetime "last_seen_at"
+    t.date     "membership_transfer_date"
   end
 
   add_index "people", ["admin_id"], name: "index_admin_id_on_people", using: :btree
