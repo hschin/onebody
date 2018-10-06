@@ -11,7 +11,7 @@ require_relative './version'
 #     end
 #
 module VersionInfo
-  GITHUB_REPO_OWNER = 'churchio'
+  GITHUB_REPO_OWNER = 'seven1m'
   GITHUB_REPO_NAME = 'onebody'
 
   def current_version
