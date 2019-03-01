@@ -1,6 +1,6 @@
-require_relative '../rails_helper'
+require 'rails_helper'
 
-describe ImportRow do
+describe ImportRow, type: :model do
   describe 'validations' do
     it { should validate_presence_of(:import) }
     it { should validate_presence_of(:sequence) }
@@ -43,7 +43,7 @@ describe ImportRow do
           :import_row,
           import: import,
           import_attributes_attributes: [
-            { import: import, name: 'id', value: person.id, sequence: 1 },
+            { import: import, name: 'id', value: person.id, sequence: 1 }
           ]
         )
       end
@@ -203,7 +203,7 @@ describe ImportRow do
           :import_row,
           import: import,
           import_attributes_attributes: [
-            { import: import, name: 'family id', value: family.id, sequence: 1 },
+            { import: import, name: 'family id', value: family.id, sequence: 1 }
           ]
         )
       end
@@ -259,7 +259,7 @@ describe ImportRow do
           :import_row,
           import: import,
           import_attributes_attributes: [
-            { import: import, name: 'family name', value: 'James Smith', sequence: 1 },
+            { import: import, name: 'family name', value: 'James Smith', sequence: 1 }
           ]
         )
       end

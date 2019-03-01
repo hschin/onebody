@@ -1,10 +1,8 @@
-class NewsItem < ActiveRecord::Base
-
+class NewsItem < ApplicationRecord
   include Authority::Abilities
   self.authorizer_name = 'NewsItemAuthorizer'
 
-  belongs_to :person
-  belongs_to :site
+  belongs_to :person, optional: true
   has_many :comments, as: :commentable, dependent: :destroy
 
   validates :title, :body, presence: true
@@ -13,12 +11,14 @@ class NewsItem < ActiveRecord::Base
 
   scope :active, -> { where(active: true) }
 
-  def name; title; end
+  def name
+    title
+  end
 
   before_save :update_published_date
 
   def update_published_date
-   self.published = Time.now if published.nil?
+    self.published = Time.now if published.nil?
   end
 
   after_create :create_as_stream_item
@@ -28,7 +28,7 @@ class NewsItem < ActiveRecord::Base
       title:           title,
       body:            body,
       person_id:       person_id,
-      context:         link.present? ? {'original_url' => link} : {},
+      context:         link.present? ? { 'original_url' => link } : {},
       streamable_type: 'NewsItem',
       streamable_id:   id,
       created_at:      published,
@@ -40,7 +40,7 @@ class NewsItem < ActiveRecord::Base
   after_update :update_stream_items
 
   def update_stream_items
-    StreamItem.where(streamable_type: "NewsItem", streamable_id: id).each do |stream_item|
+    StreamItem.where(streamable_type: 'NewsItem', streamable_id: id).each do |stream_item|
       stream_item.title = title
       stream_item.body  = body
       stream_item.save
@@ -50,7 +50,7 @@ class NewsItem < ActiveRecord::Base
   after_destroy :delete_stream_items
 
   def delete_stream_items
-    StreamItem.destroy_all(streamable_type: 'NewsItem', streamable_id: id)
+    StreamItem.where(streamable_type: 'NewsItem', streamable_id: id).destroy_all
   end
 
   class << self

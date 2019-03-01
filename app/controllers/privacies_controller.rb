@@ -1,20 +1,17 @@
 class PrivaciesController < ApplicationController
-
   before_action :get_person
 
   def edit
     @children = @family.people.undeleted.children
     unless @logged_in.can_update?(@family)
-      render text: t('not_authorized'), layout: true, status: 401
+      render html: t('not_authorized'), layout: true, status: 401
       return
     end
-    unless @family.visible?
-      flash[:warning] = t('privacies.family_hidden')
-    end
+    flash[:warning] = t('privacies.family_hidden') unless @family.visible?
   end
 
   def update
-    if params[:agree] or params[:agree_commit]
+    if params[:agree] || params[:agree_commit]
       update_consent
     else
       update_privacy
@@ -34,7 +31,8 @@ class PrivaciesController < ApplicationController
   def update_privacy
     if @logged_in.can_update?(@family)
       @family.update_attributes!(family_params)
-      MembershipSharingUpdater.new(@logged_in, params[:memberships]).perform
+      updates = params[:memberships].try(:to_unsafe_h) # handled manually by MembershipSharingUpdater
+      MembershipSharingUpdater.new(@logged_in, updates).perform
       if @family.visible?
         flash[:notice] = t('privacies.saved')
       else
@@ -42,7 +40,7 @@ class PrivaciesController < ApplicationController
       end
       redirect_to @person
     else
-      render text: t('not_authorized'), layout: true, status: 401
+      render html: t('not_authorized'), layout: true, status: 401
     end
   end
 
@@ -54,7 +52,7 @@ class PrivaciesController < ApplicationController
     else
       params.require(:family).permit(
         :visible,
-        people_attributes: [:id, :visible, :share_address, :share_mobile_phone, :share_home_phone, :share_work_phone, :share_fax, :share_email, :share_birthday, :share_anniversary, :share_activity]
+        people_attributes: %i(id visible share_address share_mobile_phone share_home_phone share_work_phone share_fax share_email share_birthday share_anniversary share_activity)
       )
     end
   end
@@ -63,5 +61,4 @@ class PrivaciesController < ApplicationController
     @person = Person.undeleted.find(params[:person_id])
     @family = @person.family
   end
-
 end

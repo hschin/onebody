@@ -1,7 +1,7 @@
-class ImportRow < ActiveRecord::Base
+class ImportRow < ApplicationRecord
   belongs_to :import, touch: true
-  belongs_to :person
-  belongs_to :family
+  belongs_to :person, optional: true
+  belongs_to :family, optional: true
 
   validates :import, :sequence, presence: true
 
@@ -60,7 +60,8 @@ class ImportRow < ActiveRecord::Base
 
   def valid_key?(key)
     return false if key.blank?
-    Person.importable_column_names.include?(key)
+    @importable_column_names ||= Person.importable_column_names
+    @importable_column_names.include?(key)
   end
 
   def match_person

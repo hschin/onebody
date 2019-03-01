@@ -1,7 +1,6 @@
-require_relative '../rails_helper'
+require 'rails_helper'
 
-describe Membership do
-
+describe Membership, type: :model do
   let(:group)      { FactoryGirl.create(:group) }
   let(:person)     { FactoryGirl.create(:person) }
   let(:membership) { group.memberships.create!(person: person, admin: true) }
@@ -33,6 +32,4 @@ describe Membership do
       end
     end
   end
-
 end
-

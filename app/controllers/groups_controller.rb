@@ -1,9 +1,8 @@
 class GroupsController < ApplicationController
-
   def index
     if params[:person_id]
       person_index
-    elsif params[:category] or params[:name]
+    elsif params[:category] || params[:name]
       search_index
     else
       overview_index
@@ -12,8 +11,8 @@ class GroupsController < ApplicationController
 
   def show
     @group = Group.find(params[:id])
-    if not (@group.approved? or @group.admin?(@logged_in))
-      render text: t('groups.pending_approval.this_group'), layout: true
+    if !(@group.approved? || @group.admin?(@logged_in))
+      render html: t('groups.pending_approval.this_group'), layout: true
     elsif @logged_in.can_read?(@group)
       @member_of = @logged_in.member_of?(@group)
       @stream_items = StreamItem.shared_with(@logged_in).where(group: @group).paginate(page: params[:timeline_page], per_page: 5)
@@ -54,7 +53,7 @@ class GroupsController < ApplicationController
       @categories = Group.categories.keys
       @members = @group.people.minimal.order('last_name, first_name')
     else
-      render text: t('not_authorized'), layout: true, status: 401
+      render html: t('not_authorized'), layout: true, status: 401
     end
   end
 
@@ -69,7 +68,7 @@ class GroupsController < ApplicationController
         edit; render action: 'edit'
       end
     else
-      render text: t('not_authorized'), layout: true, status: 401
+      render html: t('not_authorized'), layout: true, status: 401
     end
   end
 
@@ -80,7 +79,7 @@ class GroupsController < ApplicationController
       flash[:notice] = t('groups.deleted')
       redirect_to groups_path
     else
-      render text: t('not_authorized'), layout: true, status: 401
+      render html: t('not_authorized'), layout: true, status: 401
     end
   end
 
@@ -90,20 +89,17 @@ class GroupsController < ApplicationController
         @errors = []
         @groups = Group.order('category, name')
         @groups.each do |group|
-          if vals = params[:groups][group.id.to_s]
-            group.attributes = vals.permit(*group_attributes)
-            if group.changed?
-              unless group.save
-                @errors << [group.id, group.errors.values]
-              end
-            end
+          next unless vals = params[:groups][group.id.to_s]
+          group.attributes = vals.permit(*group_attributes)
+          if group.changed?
+            @errors << [group.id, group.errors.values] unless group.save
           end
         end
       else
         @groups = Group.order('category, name')
       end
     else
-      render text: t('not_authorized'), layout: true, status: 401
+      render html: t('not_authorized'), layout: true, status: 401
     end
   end
 
@@ -155,8 +151,8 @@ class GroupsController < ApplicationController
   end
 
   def group_attributes
-    base = [:name, :description, :photo, :meets, :location, :directions, :other_notes, :address, :members_send, :private, :category, :blog, :email, :prayer, :attendance, :gcal_private_link, :approval_required_to_join, :pictures, :cm_api_list_id, :has_tasks]
-    base += [:approved, :membership_mode, :link_code, :parents_of, :hidden] if @logged_in.admin?(:manage_groups)
+    base = %i(name description photo meets location directions other_notes address members_send private category blog email prayer attendance gcal_private_link approval_required_to_join pictures cm_api_list_id has_tasks)
+    base += %i(approved membership_mode link_code parents_of hidden) if @logged_in.admin?(:manage_groups)
     base
   end
 

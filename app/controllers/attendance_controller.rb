@@ -1,7 +1,6 @@
 class AttendanceController < ApplicationController
-
   skip_before_action :authenticate_user,
-    if: -> c { %w(index batch).include?(c.action_name) and params[:public] }
+                     if: ->(c) { %w(index batch).include?(c.action_name) && params[:public] }
 
   before_action :eliminate_checkin_error # TEMP
 
@@ -36,14 +35,13 @@ class AttendanceController < ApplicationController
     end
   end
 
-  # this method clears all existing attendance for the entire date and adds what is sent in params
   def batch
     batch = AttendanceBatch.new(@group, params[:attended_at])
     unless batch.attended_at
       render_text t('attendance.wrong_date_format'), :bad_request
       return
     end
-    batch.clear_all_for_date
+    batch.remove(params[:unchecked_ids])
     attendance_records = batch.update(params[:ids])
     if params[:public]
       if params[:notes].present?
@@ -59,38 +57,37 @@ class AttendanceController < ApplicationController
 
   protected
 
-  def render_text(message, status=:ok)
+  def render_text(message, status = :ok)
     respond_to do |format|
-      format.html { render text: message, layout: 'signed_out', status: status }
+      format.html { render html: message, layout: 'signed_out', status: status }
       format.json { render json: { status: status, message: message } }
     end
   end
 
   def authorize_group
-    unless @group.admin?(@logged_in) or authorized_with_token?
+    unless @group.admin?(@logged_in) || authorized_with_token?
       render_text t('not_authorized'), :unauthorized
-      return false
+      false
     end
   end
 
   def authorized_with_token?
-    params[:token].present? and @group and @group.share_token == params[:token]
+    params[:token].present? && @group && @group.share_token == params[:token]
   end
 
   def ensure_attendance_enabled_for_group
-    unless @group and @group.attendance?
-      render text: t('attendance.not_enabled'), layout: true, status: :bad_request
-      return false
+    unless @group && @group.attendance?
+      render html: t('attendance.not_enabled'), layout: true, status: :bad_request
+      false
     end
   end
 
   # TEMP - this is only needed due to legacy check-in software
   # submitting bogus attendance (that can be ignored) at /groups/0/attendance.json
   def eliminate_checkin_error
-    if params[:group_id] == '0' and params[:action] == 'create'
-      render status: 404, text: 'group not found'
-      return false
+    if params[:group_id] == '0' && params[:action] == 'create'
+      render status: 404, plain: 'group not found'
+      false
     end
   end
-
 end

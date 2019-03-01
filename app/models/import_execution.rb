@@ -65,7 +65,7 @@ class ImportExecution
     else
       create_new_family(row, person)
     end
-    row.updated_person = (person.valid? && person.changed?)
+    row.updated_person = (person.valid? && (person.changed? || person.fields_changed?))
     row.created_family = row.updated_family = false if person.invalid?
     record_errors(row, person)
     row.person = person
@@ -82,7 +82,7 @@ class ImportExecution
       person.attributes = attributes
       person.restore_attributes([:email]) if person.email_changed?
     end
-    person.fields = attributes['fields']
+    set_custom_field_values(person, attributes['fields'])
   end
 
   def create_new_person(row)
@@ -150,7 +150,30 @@ class ImportExecution
     family_errors = person.errors.delete(:family)
     hash = person.errors.to_h
     hash[:family] = person.family.errors.to_h if family_errors
+    hash.delete(:"custom_field_values.value")
+    hash.merge!(custom_field_errors(person))
     row.attribute_errors = hash
     row.errored = hash.any?
+  end
+
+  def custom_field_errors(person)
+    person.custom_field_values.each_with_object({}) do |field_value, hash|
+      next if field_value.errors.none?
+      hash[field_value.field.slug] = field_value.errors[:value].join('; ')
+    end
+  end
+
+  def set_custom_field_values(person, attrs)
+    @options_lookup ||= CustomField.select_field_options_lookup_by_label
+    attrs = attrs.dup
+    attrs.each do |field_id, value|
+      next unless (options = @options_lookup[field_id])
+      attrs[field_id] = if (id = options[value.downcase])
+                          id
+                        else
+                          Concerns::Person::Fields::LabelLookupFailure.new(value)
+                        end
+    end
+    person.fields = attrs
   end
 end

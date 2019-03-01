@@ -1,11 +1,11 @@
-require_relative '../../rails_helper'
+require 'rails_helper'
 
 describe Checkin::CheckinsController, type: :controller do
   let(:user) { FactoryGirl.create(:person, :admin_manage_checkin) }
 
   before do
     Setting.set(:features, :checkin, true)
-    Timecop.freeze(Time.local(2014, 6, 29, 8, 00))
+    Timecop.freeze(Time.local(2014, 6, 29, 8, 0o0))
   end
 
   after { Timecop.return }
@@ -24,40 +24,41 @@ describe Checkin::CheckinsController, type: :controller do
     end
 
     before do
-      patch :update, {
-        people: {
-          person.id => {
-            time.id => {
-              id: group_time.id
-            }
-          },
-          'Tim Morgan' => {
-            time.id => {
-              id: group_time.id
-            }
-          }
-        }
-      },
-      barcode: '1111111111',
-      checkin_logged_in_id: user.id
+      patch :update,
+            params: {
+              people: {
+                person.id => {
+                  time.id => {
+                    id: group_time.id
+                  }
+                },
+                'Tim Morgan' => {
+                  time.id => {
+                    id: group_time.id
+                  }
+                }
+              }
+            },
+            session: { barcode: '1111111111',
+                       checkin_logged_in_id: user.id }
     end
 
     it 'creates a new attendance record for members and for guests' do
       expect(AttendanceRecord.count).to eq(2)
       expect(AttendanceRecord.all.map(&:attributes)).to match_array([
-        include(
-          'person_id'   => person.id,
-          'attended_at' => DateTime.new(2014, 6, 29, 9, 0, 0),
-          'barcode_id'  => '1111111111'
-        ),
-        include(
-          'person_id'   => nil,
-          'first_name'  => 'Tim',
-          'last_name'   => 'Morgan',
-          'attended_at' => DateTime.new(2014, 6, 29, 9, 0, 0),
-          'barcode_id'  => '1111111111'
-        )
-      ])
+                                                                      include(
+                                                                        'person_id'   => person.id,
+                                                                        'attended_at' => DateTime.new(2014, 6, 29, 9, 0, 0),
+                                                                        'barcode_id'  => '1111111111'
+                                                                      ),
+                                                                      include(
+                                                                        'person_id'   => nil,
+                                                                        'first_name'  => 'Tim',
+                                                                        'last_name'   => 'Morgan',
+                                                                        'attended_at' => DateTime.new(2014, 6, 29, 9, 0, 0),
+                                                                        'barcode_id'  => '1111111111'
+                                                                      )
+                                                                    ])
     end
 
     it 'deletes existing records for the same time' do

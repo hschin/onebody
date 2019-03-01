@@ -1,4 +1,4 @@
-require_relative '../rails_helper'
+require 'rails_helper'
 
 describe ExportJob do
   let(:person) { FactoryGirl.create(:person) }
@@ -31,7 +31,7 @@ describe ExportJob do
         file = GeneratedFile.last
         expect(file.file).to be
         expect(File.read(file.file.path)).to match(
-          %r{name,description.*Foo}m
+          /name,description.*Foo/m
         )
       end
     end
@@ -59,7 +59,7 @@ describe ExportJob do
         file = GeneratedFile.last
         expect(file.file).to be
         expect(File.read(file.file.path)).to match(
-          %r{first_name,last_name.*John,Smith}m
+          /first_name,last_name.*John,Smith/m
         )
       end
     end

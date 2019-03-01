@@ -1,4 +1,4 @@
-require_relative '../../rails_helper'
+require 'rails_helper'
 
 describe Checkin::GroupsController, type: :controller do
   let!(:checkin_time)   { FactoryGirl.create(:checkin_time) }
@@ -11,7 +11,9 @@ describe Checkin::GroupsController, type: :controller do
 
   describe '#index' do
     before do
-      get :index, { date: '2015-03-22', format: :json }, logged_in_id: user.id
+      get :index,
+          params: { date: '2015-03-22', format: :json },
+          session: { logged_in_id: user.id }
     end
 
     it 'returns group info' do
@@ -21,10 +23,10 @@ describe Checkin::GroupsController, type: :controller do
         'groups' => {
           '09:00 AM' => {
             'Adult Classes' => [
-              [instance_of(Fixnum), 'Check-in Group 2', false, nil, 'Adult Classes']
+              [group2.id, 'Check-in Group 2', false, nil, 'Adult Classes']
             ],
             '' => [
-              [instance_of(Fixnum), 'Check-in Group 1', false, nil, nil]
+              [group1.id, 'Check-in Group 1', false, nil, nil]
             ]
           }
         },

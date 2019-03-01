@@ -1,9 +1,8 @@
 class Checkin::FamiliesController < ApplicationController
-
   def show
     @family = Family.undeleted.find(params[:id])
     @family_people = @family.people.undeleted.order(:position)
-    @attendance_records = AttendanceRecord.find_for_people_and_date(@family_people.map(&:id), Date.today)
+    @attendance_records = AttendanceRecord.find_for_people_and_date(@family_people.map(&:id), Date.current)
                                           .group_by(&:person_id)
   end
 
@@ -36,7 +35,7 @@ class Checkin::FamiliesController < ApplicationController
   def build_family_people
     @people = @family.people.to_a
     adults = []
-    adults << @people.shift until adults.length >= 2 or @people.first.nil? or @people.first.child?
+    adults << @people.shift until adults.length >= 2 || @people.first.nil? || @people.first.child?
     adults << @family.people.adults.build until adults.length >= 2
     @people.unshift(*adults)
     @people << @family.people.children.build until @people.length >= 25

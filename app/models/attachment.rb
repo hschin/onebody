@@ -1,12 +1,11 @@
-class Attachment < ActiveRecord::Base
+class Attachment < ApplicationRecord
   include Concerns::FileImage
 
   include Authority::Abilities
   self.authorizer_name = 'AttachmentAuthorizer'
 
-  belongs_to :message
-  belongs_to :group
-  belongs_to :site
+  belongs_to :message, optional: true
+  belongs_to :group, optional: true
 
   scope :images, -> { where("file_content_type like 'image/%'") }
   scope :non_images, -> { where("file_content_type not like 'image/%'") }
@@ -19,7 +18,7 @@ class Attachment < ActiveRecord::Base
   validates_attachment_size :file, less_than: PAPERCLIP_FILE_MAX_SIZE
 
   def visible_to?(person)
-    (message and person.can_read?(message))
+    (message && person.can_read?(message))
   end
 
   def human_name
@@ -29,7 +28,8 @@ class Attachment < ActiveRecord::Base
   class << self
     def create_from_file(attributes)
       file = attributes[:file]
-      attributes.merge!(name: File.split(file.original_filename).last, content_type: file.content_type)
+      attributes[:name] = File.split(file.original_filename).last
+      attributes[:content_type] = file.content_type
       create(attributes).tap do |attachment|
         if attachment.valid?
           attachment.file = file

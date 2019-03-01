@@ -1,4 +1,4 @@
-require_relative '../rails_helper'
+require 'rails_helper'
 
 describe GeocoderJob do
   let(:family) do
@@ -47,7 +47,7 @@ describe GeocoderJob do
         allow(Geocoder).to receive(:search) do
           call_count += 1
           if call_count < 3
-            fail Geocoder::OverQueryLimitError
+            raise Geocoder::OverQueryLimitError
           else
             [double('result', latitude: 36.151305, longitude: -95.975393)]
           end
@@ -56,8 +56,7 @@ describe GeocoderJob do
       end
 
       it 'sleeps for a time before trying again' do
-        expect(subject).to have_received(:sleep).with(3)
-        expect(subject).to have_received(:sleep).with(9)
+        expect(subject).to have_received(:sleep).with(1).twice
         expect(Geocoder).to have_received(:search).exactly(3).times
       end
 
@@ -76,7 +75,7 @@ describe GeocoderJob do
         allow(Geocoder).to receive(:search) do
           call_count += 1
           if call_count <= error_count
-            fail Geocoder::RequestDenied
+            raise Geocoder::RequestDenied
           else
             [double('result', latitude: 36.151305, longitude: -95.975393)]
           end
@@ -91,7 +90,7 @@ describe GeocoderJob do
         end
 
         it 'sleeps twice before trying again' do
-          expect(subject).to have_received(:sleep).with(5).twice
+          expect(subject).to have_received(:sleep).with(1).twice
           expect(Geocoder).to have_received(:search).exactly(3).times
         end
 
@@ -107,9 +106,9 @@ describe GeocoderJob do
         let(:error_count) { 3 }
 
         it 'fails' do
-          expect {
+          expect do
             subject.perform(Site.current, 'Family', family.id)
-          }.to raise_error(GeocoderJob::GeocodingError)
+          end.to raise_error(GeocoderJob::GeocodingError)
         end
 
         it 'does not update the latitude and longitude' do

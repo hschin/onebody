@@ -2,7 +2,6 @@
 # delegates those changes to the Person and Family models.
 
 class Updater
-
   # specify how to handle changes per attribute
   # :approve = create a pending update that must be approved by an admin
   #            (unless the 'Update Must Be Approved' setting is disabled, in which case it is same as :immediate)
@@ -60,7 +59,6 @@ class Updater
       confirmation_date:    :admin,
       membership_transfer_date:   :admin,
       relationships:        :admin,
-      sequence:             :admin,
       status:               :admin
     },
     family: {
@@ -81,9 +79,10 @@ class Updater
       barcode_id:           :admin,
       alternate_barcode_id: :admin
     }
-  }
+  }.freeze
 
   def initialize(params)
+    params = params.to_unsafe_h unless params.is_a?(Hash) # we filter them manually
     self.params = params
   end
 
@@ -102,7 +101,7 @@ class Updater
   # shows which fields would be affected if the update were applied
   def changes
     @changes ||= begin
-      h = HashWithIndifferentAccess.new
+      h = ActiveSupport::HashWithIndifferentAccess.new
       h[:person] = Comparator.new(person, params[:person]).changes if person
       h[:family] = Comparator.new(family, params[:family]).changes if family
       h.reject { |_, v| v.empty? }
@@ -113,11 +112,9 @@ class Updater
   # and/or creates a new Update pending approval
   def save!
     changes # set cache
-    person.updates.create!(family_id: family.id, data: approval_params) if approval_params.any?
+    person.updates.create!(family_id: family.id, data: approval_params) unless approval_params.empty?
     success = person.update_attributes(person_params) && family.update_attributes(family_params)
-    unless success
-      family.errors.values.each { |m| person.errors.add(:base, m) }
-    end
+    family.errors.values.each { |m| person.errors.add(:base, m) } unless success
     success
   end
 
@@ -146,17 +143,17 @@ class Updater
   # params that require approval
   def approval_params
     filter_params do |access, section, key, val|
-      if :approve == access and
-        changes[section].try(:[], key) and
-        approvals_enabled? and
-        not admin?
-          val
+      if access == :approve &&
+          changes[section].try(:[], key) &&
+          approvals_enabled? &&
+          !admin?
+        val
       end
     end
   end
 
   # returns only params that are allowed by the supplied block
-  def filter_params(section=nil, unfiltered=@params, spec=PARAMS, &block)
+  def filter_params(section = nil, unfiltered = @params, spec = PARAMS, &block)
     ActionController::Parameters.new.tap do |permitted|
       unfiltered.each do |key, val|
         if access = find_spec(spec, key)
@@ -170,7 +167,7 @@ class Updater
         end
       end
       permitted.permit!
-      permitted.reject! { |_, v| v == {} }
+      permitted.reject! { |_, v| v.is_a?(ActionController::Parameters) && v.empty? }
     end
   end
 
@@ -182,15 +179,15 @@ class Updater
 
   # given a key, find corresponding spec/access (value) from supplied spec hash
   def find_spec(spec, key)
-    wildcard = key.to_s.split('_').first + '_'  # e.g. share_
+    wildcard = key.to_s.split('_').first + '_' # e.g. share_
     spec[key.to_sym] || spec[wildcard.to_sym]
   end
 
   # types of access that allow attributes to be updated on model immediately
   # (no approval necessary)
   def immediate_access_types
-    [:immediate, :notify].tap do |base|
-      base << :approve if admin? or not approvals_enabled?
+    %i(immediate notify).tap do |base|
+      base << :approve if admin? || !approvals_enabled?
       base << :admin if admin?
     end
   end

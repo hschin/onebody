@@ -1,6 +1,6 @@
 class SetupsController < ApplicationController
-  skip_before_filter :authenticate_user
-  before_filter :check_setup_requirements
+  skip_before_action :authenticate_user
+  before_action :check_setup_requirements
 
   layout 'signed_out'
 
@@ -29,9 +29,9 @@ class SetupsController < ApplicationController
   private
 
   def check_setup_requirements
-    if Person.count > 0
-      render text: t('not_authorized'), layout: true
-      return false
+    if Person.exists?
+      render html: t('not_authorized'), layout: true
+      false
     end
   end
 end

@@ -1,7 +1,5 @@
-class Update < ActiveRecord::Base
-
+class Update < ApplicationRecord
   belongs_to :person
-  belongs_to :site
 
   scope_by_site_id
 
@@ -22,7 +20,7 @@ class Update < ActiveRecord::Base
 
   # update_attributes!(apply: true) will call apply!
   attr_accessor :apply
-  after_save { apply! if apply and not complete? }
+  after_save { apply! if apply && !complete? }
 
   after_create :notify_admin
 
@@ -62,7 +60,7 @@ class Update < ActiveRecord::Base
   private
 
   def pending_changes
-    HashWithIndifferentAccess.new(
+    ActiveSupport::HashWithIndifferentAccess.new(
       person: Comparator.new(person, data[:person]).changes,
       family: Comparator.new(family, data[:family]).changes
     )
@@ -75,7 +73,7 @@ class Update < ActiveRecord::Base
   # update data in a diff format
   # to support legacy records (before we started storing the diff)
   def data_as_diff
-    HashWithIndifferentAccess.new(
+    ActiveSupport::HashWithIndifferentAccess.new(
       person: faux_diff_attributes(data[:person]),
       family: faux_diff_attributes(data[:family])
     )
@@ -83,15 +81,17 @@ class Update < ActiveRecord::Base
 
   # convert top level and second level to Hash class
   # ensure top level is symbol
-  def data_to_hash(d)
-    self[:data] = d.each_with_object({}) do |(key, val), hash|
-      hash[key.to_sym] = val.to_hash
+  def data_to_hash(data)
+    if data.is_a?(ActionController::Parameters)
+      data.to_unsafe_h.symbolize_keys # 'unsafe' is ok here because we filter our own params
+    else
+      data.to_hash.symbolize_keys
     end
   end
 
   # build a fake diff with :unknown as the source
   def faux_diff_attributes(attrs)
-    return {} unless attrs and attrs.any?
+    return {} unless attrs && attrs.any?
     attrs.each_with_object({}) do |(key, val), hash|
       hash[key] = [:unknown, val]
     end

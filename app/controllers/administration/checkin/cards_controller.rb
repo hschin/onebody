@@ -1,9 +1,8 @@
 class Administration::Checkin::CardsController < ApplicationController
+  before_action :only_admins
 
-  before_filter :only_admins
-  
-  VALID_SORT_COLS = ['id', 'legacy_id', 'last_name,name', 'barcode_id', 'barcode_assigned_at desc']
-  
+  VALID_SORT_COLS = ['id', 'legacy_id', 'last_name,name', 'barcode_id', 'barcode_assigned_at desc'].freeze
+
   def index
     respond_to do |format|
       scope = Family.where("barcode_id is not null and barcode_id != '' and deleted = ?", false)
@@ -19,25 +18,24 @@ class Administration::Checkin::CardsController < ApplicationController
             csv << [family.id, family.legacy_id, family.name, family.barcode_id, family.barcode_assigned_at]
           end
         end
-        render text: out
+        render plain: out
       end
     end
   end
-  
+
   private
-  
-    def only_admins
-      unless @logged_in.admin?(:manage_checkin)
-        render :text => 'You must be an administrator to use this section.', :layout => true, :status => 401
-        return false
-      end
+
+  def only_admins
+    unless @logged_in.admin?(:manage_checkin)
+      render html: 'You must be an administrator to use this section.', layout: true, status: 401
+      false
     end
-  
-    def feature_enabled?
-      unless Setting.get(:features, :checkin)
-        render :text => 'This feature is unavailable.', :layout => true
-        false
-      end
+  end
+
+  def feature_enabled?
+    unless Setting.get(:features, :checkin)
+      render html: 'This feature is unavailable.', layout: true
+      false
     end
-  
+  end
 end

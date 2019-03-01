@@ -37,11 +37,11 @@ module ApplicationHelper
   end
 
   def simple_url(url, options = { www: true })
-    if options[:www]
-      regex = %r{\Ahttps?://}
-    else
-      regex = %r{\Ahttps?://(www\.)?}
-    end
+    regex = if options[:www]
+              %r{\Ahttps?://}
+            else
+              %r{\Ahttps?://(www\.)?}
+            end
     url.sub(regex, '').sub(/\/$/, '')
   end
 
@@ -54,28 +54,9 @@ module ApplicationHelper
     @logged_in && @person && @logged_in == @person
   end
 
-  def help_path(name = nil)
-    page_for_public_path("help/#{name}")
-  end
-
-  def render_page_content(path)
-    page = Page.where(path: path, published: true).first
-    return unless page
-    sanitize_html(page.body)
-  end
-
   def format_phone(phone, mobile = false)
-    return '' if phone.blank?
     format = Setting.get(:formats, mobile ? :mobile_phone : :phone)
-    return phone if format.blank?
-    groupings = format.scan(/d+/).map(&:length)
-    groupings = [3, 3, 4] unless groupings.length == 3
-    ActionController::Base.helpers.number_to_phone(
-      phone,
-      area_code: format.index('(') ? true : false,
-      groupings: groupings,
-      delimiter: format.reverse.match(/[^d]/).to_s
-    )
+    PhoneNumberPresenter.new(phone, format).formatted
   end
   module_function :format_phone
 
@@ -97,11 +78,11 @@ module ApplicationHelper
   end
 
   def error_messages_for(form)
-    if form.respond_to?(:object)
-      obj = form.object
-    else
-      obj = form
-    end
+    obj = if form.respond_to?(:object)
+            form.object
+          else
+            form
+          end
     error_messages_for_object(obj)
   end
 
@@ -109,11 +90,11 @@ module ApplicationHelper
     return if obj.errors.empty?
     content_tag(:div, class: 'callout callout-danger form-errors') do
       content_tag(:h4, t('There_were_errors')) +
-      content_tag(:ul, class: 'list') do
-        uniq_errors(obj).map do |attribute, message|
-          content_tag(:li, message, data: { attribute: "#{obj.class.name.underscore}_#{attribute}" })
-        end.join.html_safe
-      end
+        content_tag(:ul, class: 'list') do
+          uniq_errors(obj).map do |attribute, message|
+            content_tag(:li, message, data: { attribute: "#{obj.class.name.underscore}_#{attribute}" })
+          end.join.html_safe
+        end
     end
   end
 
@@ -129,13 +110,18 @@ module ApplicationHelper
   end
 
   def sortable_column_heading(label, sort, keep_params = [])
+    extra_params = if keep_params == :all
+                     params.to_unsafe_h.except(:controller, :action, :sort)
+                   else
+                     params.to_unsafe_h.select { |k| keep_params.map(&:to_s).include?(k) }
+                   end
     options = {
       controller: params[:controller],
       action:     params[:action],
       id:         params[:id],
       sort:       sort_params(sort)
     }.merge(
-      keep_params == :all ? params.except(:controller, :action, :sort) : params.reject { |k| !keep_params.include?(k) }
+      extra_params
     )
     url = url_for(options)
     link_to label, url
@@ -158,14 +144,14 @@ module ApplicationHelper
 
   def date_format
     placeholder = Setting.get(:formats, :date)
-                  .gsub(/%Y/, I18n.t('date_format.YYYY'))
-                  .gsub(/%m/, I18n.t('date_format.MM'))
-                  .gsub(/%d/, I18n.t('date_format.DD'))
+                         .gsub(/%Y/, I18n.t('date_format.YYYY'))
+                         .gsub(/%m/, I18n.t('date_format.MM'))
+                         .gsub(/%d/, I18n.t('date_format.DD'))
     placeholder unless placeholder.include?('%')
   end
 
   def datepicker_format
-    date_format.downcase
+    (date_format || 'yyyy-mm-dd').downcase
   end
 
   # TODO: replace all inline JS links with unobtrusive JS
@@ -205,7 +191,7 @@ module ApplicationHelper
 
   def analytics_js
     if params[:controller] == 'administration/settings'
-      # workaround for Safari bug (see https://github.com/churchio/onebody/issues/262)
+      # workaround for Safari bug (see https://github.com/seven1m/onebody/issues/262)
       return
     end
     setting(:services, :analytics).to_s.html_safe if Rails.env.production?
@@ -217,9 +203,7 @@ module ApplicationHelper
       super
     else
       super.tap do |result|
-        if result =~ /"(translation missing: .*)"/
-          raise $1
-        end
+        raise Regexp.last_match(1) if result =~ /"(translation missing: .*)"/
       end
     end
   end

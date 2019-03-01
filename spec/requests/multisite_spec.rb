@@ -1,4 +1,4 @@
-require_relative '../rails_helper'
+require 'rails_helper'
 
 describe 'MultiSite', type: :request do
   before do
@@ -15,7 +15,7 @@ describe 'MultiSite', type: :request do
     Site.current = Site.find(1)
   end
 
-  it "logs in" do
+  it 'logs in' do
     site! 'host1'
     post_sign_in_form @user2.email
     expect(response).to be_success
@@ -26,10 +26,11 @@ describe 'MultiSite', type: :request do
     assert_select 'body', /email address cannot be found/
   end
 
-  it "browses" do
+  it 'browses' do
     site! 'host1'
     sign_in_as @user1
-    get '/search', browse: true
+    get '/search',
+        params: { browse: true }
     assert_select 'body', /1 person found/
     assert_select 'body', /Jim Williams/
     assert_select 'body', html: /Tom Jones/, count: 0

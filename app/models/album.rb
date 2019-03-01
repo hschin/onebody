@@ -1,16 +1,15 @@
-class Album < ActiveRecord::Base
+class Album < ApplicationRecord
   include Authority::Abilities
   include Concerns::Ability
   self.authorizer_name = 'AlbumAuthorizer'
 
   belongs_to :owner, polymorphic: true
-  belongs_to :site
   has_many :pictures, dependent: :destroy
   has_one :stream_item, as: :streamable, dependent: :delete
 
   scope_by_site_id
 
-  validates :name, presence: true, uniqueness: { scope: [:site_id, :owner_type, :owner_id] }
+  validates :name, presence: true, uniqueness: { scope: %i(site_id owner_type owner_id) }
   validates :owner, presence: true
 
   after_update :update_stream_item

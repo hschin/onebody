@@ -1,6 +1,5 @@
 class FamiliesController < ApplicationController
-
-  load_and_authorize_resource except: [:show, :batch, :select]
+  load_and_authorize_resource except: %i(show batch select)
 
   def index
     respond_to do |format|
@@ -20,21 +19,21 @@ class FamiliesController < ApplicationController
   end
 
   def show
-    if params[:legacy_id]
-      @family = Family.where(legacy_id: params[:id]).first
-    elsif params[:barcode_id]
-      @family = Family.where(barcode_id: params[:id], deleted: false).first ||
-        Family.where(alternate_barcode_id: params[:id], deleted: false).first
-    else
-      @family = Family.where(id: params[:id], deleted: false).first
-    end
+    @family = if params[:legacy_id]
+                Family.where(legacy_id: params[:id]).first
+              elsif params[:barcode_id]
+                Family.where(barcode_id: params[:id], deleted: false).first ||
+                  Family.where(alternate_barcode_id: params[:id], deleted: false).first
+              else
+                Family.where(id: params[:id], deleted: false).first
+              end
     raise ActiveRecord::RecordNotFound unless @family
     @people = @family.people.undeleted.to_a.select { |p| @logged_in.can_read?(p) }
     if @logged_in.can_read?(@family)
       respond_to do |format|
         format.html
         format.xml  { render xml: @family.to_xml } if can_export?
-        format.json { render text: @family.to_json(except: %w(site_id)) } if can_export?
+        format.json { render plain: @family.to_json(except: %w(site_id)) } if can_export?
         format.js do
           if params[:barcode_entry]
             render :update do |page|
@@ -46,7 +45,7 @@ class FamiliesController < ApplicationController
         end
       end
     else
-      render text: t('families.not_found'), status: 404
+      render plain: t('families.not_found'), status: 404
     end
   end
 
@@ -59,7 +58,7 @@ class FamiliesController < ApplicationController
         format.html { redirect_to @family, notice: t('families.new.created.notice') }
         format.xml  { render xml: @family, status: :created, location: @family }
       else
-        format.html { render action: "new" }
+        format.html { render action: 'new' }
         format.xml  { render xml: @family.errors, status: :unprocessable_entity }
       end
     end
@@ -103,13 +102,13 @@ class FamiliesController < ApplicationController
 
   def batch
     # delete family (used by Administration::DeletedPeopleController)
-    if @logged_in.admin?(:edit_profiles) and params[:delete]
+    if @logged_in.admin?(:edit_profiles) && params[:delete]
       params[:ids].to_a.each do |id|
         Family.find(id).destroy
       end
       redirect_back
     else
-      render text: t('not_authorized'), layout: true, status: 401
+      render html: t('not_authorized'), layout: true, status: 401
     end
   end
 

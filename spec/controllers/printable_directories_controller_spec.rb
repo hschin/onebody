@@ -1,4 +1,4 @@
-require_relative '../rails_helper'
+require 'rails_helper'
 
 describe PrintableDirectoriesController, type: :controller do
   let(:user) { FactoryGirl.create(:person) }
@@ -6,7 +6,8 @@ describe PrintableDirectoriesController, type: :controller do
   describe '#create' do
     before do
       allow(PrintableDirectoryJob).to receive(:perform_later)
-      post :create, {}, logged_in_id: user.id
+      post :create,
+           session: { logged_in_id: user.id }
     end
 
     it 'calls perform_later on PrintableDirectoryJob' do

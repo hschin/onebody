@@ -1,13 +1,15 @@
-require_relative '../../rails_helper'
+require 'rails_helper'
 
 describe Checkin::FamiliesController, type: :controller do
-
   let(:family) { FactoryGirl.create(:family) }
   let(:user)   { FactoryGirl.create(:person) }
 
   describe '#show' do
     before do
-      xhr :get, :show, { id: family.id, format: :js }, { logged_in_id: user.id }
+      get :show,
+          params: { id: family.id, format: :js },
+          session: { logged_in_id: user.id },
+          xhr: true
     end
 
     it 'renders the show template' do
@@ -22,7 +24,9 @@ describe Checkin::FamiliesController, type: :controller do
 
   describe '#new' do
     before do
-      xhr :get, :new, {}, { logged_in_id: user.id }
+      get :new,
+          session: { logged_in_id: user.id },
+          xhr: true
     end
 
     it 'renders the new template' do
@@ -33,12 +37,12 @@ describe Checkin::FamiliesController, type: :controller do
     it 'assigns new family and people' do
       expect(assigns[:family]).to be_a(Family)
       expect(assigns[:people].map(&:class)).to eq([Person] * 25)
-      expect(assigns[:people].map(&:child?)).to eq([false]*2 + [true]*23)
+      expect(assigns[:people].map(&:child?)).to eq([false] * 2 + [true] * 23)
     end
   end
 
   describe '#create' do
-    def people_attributes(people, barcode_id='1234567890')
+    def people_attributes(people, barcode_id = '1234567890')
       people = people.each_with_index
                      .each_with_object({}) { |(p, i), h| h[i.to_s] = p }
       {
@@ -52,10 +56,10 @@ describe Checkin::FamiliesController, type: :controller do
     context 'given 1 adult' do
       before do
         post :create,
-          people_attributes([
-            { first_name: 'Tim', last_name: 'Morgan' },
-          ]),
-          { logged_in_id: user.id }
+             params: people_attributes([
+               { first_name: 'Tim', last_name: 'Morgan' }
+             ]),
+             session: { logged_in_id: user.id }
       end
 
       it 'renders the create template' do
@@ -75,11 +79,11 @@ describe Checkin::FamiliesController, type: :controller do
     context 'given 2 adults' do
       before do
         post :create,
-          people_attributes([
-            { first_name: 'Tim',    last_name: 'Morgan' },
-            { first_name: 'Jennie', last_name: 'Morgan' }
-          ]),
-          { logged_in_id: user.id }
+             params: people_attributes([
+               { first_name: 'Tim', last_name: 'Morgan' },
+               { first_name: 'Jennie', last_name: 'Morgan' }
+             ]),
+             session: { logged_in_id: user.id }
       end
 
       it 'renders the create template' do
@@ -92,19 +96,19 @@ describe Checkin::FamiliesController, type: :controller do
         expect(Family.last.name).to eq('Tim & Jennie Morgan')
         expect(Family.last.people.map(&:child?)).to eq([false, false])
         expect(Family.last.people.map(&:name)).to eq(['Tim Morgan', 'Jennie Morgan'])
-        expect(Family.last.people.map(&:status)).to eq(['pending', 'pending'])
+        expect(Family.last.people.map(&:status)).to eq(%w(pending pending))
       end
     end
 
     context 'given 1 adult and 1 kid missing a birthday' do
       before do
         post :create,
-          people_attributes([
-            { first_name: 'Tim', last_name: 'Morgan' },
-            {},
-            { first_name: 'Mac', last_name: 'Morgan', birthday: '' }
-          ]),
-          { logged_in_id: user.id }
+             params: people_attributes([
+               { first_name: 'Tim', last_name: 'Morgan' },
+               {},
+               { first_name: 'Mac', last_name: 'Morgan', birthday: '' }
+             ]),
+             session: { logged_in_id: user.id }
       end
 
       it 'renders the new template' do
@@ -125,13 +129,13 @@ describe Checkin::FamiliesController, type: :controller do
     context 'given 2 adults and 2 kids' do
       before do
         post :create,
-          people_attributes([
-            { first_name: 'Tim',    last_name: 'Morgan' },
-            { first_name: 'Jennie', last_name: 'Morgan' },
-            { first_name: 'Mac',    last_name: 'Morgan', birthday: '1/1/2014' },
-            { first_name: 'Kai',    last_name: 'Morgan', birthday: '1/1/2015' }
-          ]),
-          { logged_in_id: user.id }
+             params: people_attributes([
+               { first_name: 'Tim',    last_name: 'Morgan' },
+               { first_name: 'Jennie', last_name: 'Morgan' },
+               { first_name: 'Mac',    last_name: 'Morgan', birthday: '1/1/2014' },
+               { first_name: 'Kai',    last_name: 'Morgan', birthday: '1/1/2015' }
+             ]),
+             session: { logged_in_id: user.id }
       end
 
       it 'renders the create template' do
@@ -151,13 +155,13 @@ describe Checkin::FamiliesController, type: :controller do
     context 'given a kid without a birthday' do
       before do
         post :create,
-          people_attributes([
-            { first_name: 'Tim',    last_name: 'Morgan' },
-            { first_name: 'Jennie', last_name: 'Morgan' },
-            { first_name: 'Mac',    last_name: 'Morgan', birthday: '' },
-            { first_name: 'Kai',    last_name: 'Morgan', birthday: '1/1/2015' }
-          ]),
-          { logged_in_id: user.id }
+             params: people_attributes([
+               { first_name: 'Tim',    last_name: 'Morgan' },
+               { first_name: 'Jennie', last_name: 'Morgan' },
+               { first_name: 'Mac',    last_name: 'Morgan', birthday: '' },
+               { first_name: 'Kai',    last_name: 'Morgan', birthday: '1/1/2015' }
+             ]),
+             session: { logged_in_id: user.id }
       end
 
       it 'renders the new template' do
@@ -174,8 +178,8 @@ describe Checkin::FamiliesController, type: :controller do
     context 'given no people' do
       before do
         post :create,
-          people_attributes([]),
-          { logged_in_id: user.id }
+             params: people_attributes([]),
+             session: { logged_in_id: user.id }
       end
 
       it 'renders the new template' do
@@ -192,12 +196,12 @@ describe Checkin::FamiliesController, type: :controller do
     context 'given no parents' do
       before do
         post :create,
-          people_attributes([
-            {},
-            {},
-            { first_name: 'Mac', last_name: 'Morgan', birthday: '1/1/2014' },
-          ]),
-          { logged_in_id: user.id }
+             params: people_attributes([
+               {},
+               {},
+               { first_name: 'Mac', last_name: 'Morgan', birthday: '1/1/2014' }
+             ]),
+             session: { logged_in_id: user.id }
       end
 
       it 'renders the new template' do
@@ -214,10 +218,10 @@ describe Checkin::FamiliesController, type: :controller do
     context 'given no barcode' do
       before do
         post :create,
-          people_attributes([
-            { first_name: 'Tim', last_name: 'Morgan' }
-          ], ''),
-          { logged_in_id: user.id }
+             params: people_attributes([
+               { first_name: 'Tim', last_name: 'Morgan' }
+             ], ''),
+             session: { logged_in_id: user.id }
       end
 
       it 'renders the new template' do
@@ -234,16 +238,19 @@ describe Checkin::FamiliesController, type: :controller do
 
   describe '#update' do
     before do
-      xhr :patch, :update,
-        {
-          id: family.id,
-          family: {
-            barcode_id: '1234567890',
-            alternate_barcode_id: '5678901234'
-          },
-          format: :js
-        },
-        { logged_in_id: user.id }
+      patch :update,
+            params: {
+              id: family.id,
+              family: {
+                barcode_id: '1234567890',
+                alternate_barcode_id: '5678901234'
+              },
+              format: :js
+            },
+            session: {
+              logged_in_id: user.id
+            },
+            xhr: true
     end
 
     it 'renders the update template' do

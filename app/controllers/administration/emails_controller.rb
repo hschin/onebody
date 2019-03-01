@@ -1,5 +1,5 @@
 class Administration::EmailsController < ApplicationController
-  before_filter :only_admins
+  before_action :only_admins
 
   def index
     @people = Person.where(email_changed: true, deleted: false).order('last_name, first_name')
@@ -15,11 +15,10 @@ class Administration::EmailsController < ApplicationController
 
   private
 
-    def only_admins
-      unless @logged_in.admin?(:manage_updates)
-        render text: t('only_admins'), layout: true, status: 401
-        return false
-      end
+  def only_admins
+    unless @logged_in.admin?(:manage_updates)
+      render html: t('only_admins'), layout: true, status: 401
+      false
     end
-
+  end
 end

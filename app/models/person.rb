@@ -1,4 +1,4 @@
-class Person < ActiveRecord::Base
+class Person < ApplicationRecord
   include Authority::UserAbilities
   include Authority::Abilities
   self.authorizer_name = 'PersonAuthorizer'
@@ -30,7 +30,7 @@ class Person < ActiveRecord::Base
   end
 
   belongs_to :family
-  belongs_to :admin
+  belongs_to :admin, optional: true
   has_many :albums, as: :owner
   has_many :pictures, -> { order(created_at: :desc) }
   has_many :messages
@@ -43,10 +43,8 @@ class Person < ActiveRecord::Base
   has_many :attendance_records
   has_many :generated_files
   has_many :tasks, ->(my) { where('tasks.group_scope is true or tasks.person_id = ? ', my.id) }, through: :groups
-  belongs_to :site
-  belongs_to :last_seen_stream_item, class_name: 'StreamItem'
-  belongs_to :last_seen_group, class_name: 'Group'
-  has_many :offerings
+  belongs_to :last_seen_stream_item, class_name: 'StreamItem', optional: true
+  belongs_to :last_seen_group, class_name: 'Group', optional: true
 
   scope_by_site_id
 
@@ -63,24 +61,24 @@ class Person < ActiveRecord::Base
   scope :can_sign_in,            -> { undeleted.where(status: Person.statuses.values_at(:pending, :active)) }
   scope :administrators,         -> { undeleted.where('admin_id is not null') }
   scope :minimal,                -> { select(MINIMAL_ATTRIBUTES.map { |a| "people.#{a}" }.join(',')) }
-  scope :with_birthday_month,    -> (m) { where('birthday is not null and extract(month from birthday) = ?', m) }
+  scope :with_birthday_month,    ->(m) { where('birthday is not null and extract(month from birthday) = ?', m) }
 
   has_attached_file :photo, PAPERCLIP_PHOTO_OPTIONS
 
+  validate :validate_password_length
+  validate :validate_password_strength
+
   validates :first_name, :last_name,
             presence: true
-  validate :validate_password_length
   validates :description,
             length: { maximum: 25 }
   validates :password,
             confirmation: true,
             if: -> { Person.logged_in }
-  validates :password, password_strength: true,
-            if: -> { Setting.get(:privacy, :require_strong_password) }
   validates :alternate_email,
-            uniqueness: { scope: [:site_id, :deleted] },
+            uniqueness: { scope: %i(site_id deleted) },
             allow_nil: true,
-            unless: -> (p) { p.deleted? }
+            unless: ->(p) { p.deleted? }
   validates :feed_code,
             uniqueness: { scope: :site_id },
             allow_nil: true
@@ -119,8 +117,18 @@ class Person < ActiveRecord::Base
   def validate_password_length
     return unless Person.logged_in
     return if password.nil?
-    return if password.length >= Setting.get(:privacy, :minimum_password_characters).to_i
-    errors.add :password, 'Password is too short'
+    min_length = Setting.get(:privacy, :minimum_password_characters).to_i
+    return if password.length >= min_length
+    errors.add :password, I18n.t('activerecord.errors.models.person.attributes.password.too_short', length: min_length)
+  end
+
+  def validate_password_strength
+    return unless Person.logged_in
+    return unless Setting.get(:privacy, :require_strong_password)
+    return if password.nil?
+    checker = StrongPassword::StrengthChecker.new(password)
+    return if checker.is_strong?
+    errors.add :password, I18n.t('activerecord.errors.models.person.attributes.password.too_weak')
   end
 
   enum status: {
@@ -137,14 +145,14 @@ class Person < ActiveRecord::Base
   sharable_attributes :home_phone, :mobile_phone, :work_phone, :fax,
                       :email, :birthday, :address, :anniversary, :activity
 
-  self.skip_time_zone_conversion_for_attributes = [:birthday, :anniversary]
-  self.digits_only_for_attributes = [:mobile_phone, :work_phone, :fax, :business_phone]
+  self.skip_time_zone_conversion_for_attributes = %i(birthday anniversary)
+  self.digits_only_for_attributes = %i(mobile_phone work_phone fax business_phone)
 
   blank_to_nil :suffix, :can_pick_up, :cannot_pick_up, :classes, :medical_notes
 
   date_writer :birthday, :anniversary
 
-  after_initialize :guess_last_name, if: -> (p) { p.last_name.nil? }
+  after_initialize :guess_last_name, if: ->(p) { p.last_name.nil? }
 
   def guess_last_name
     return unless family
@@ -241,10 +249,10 @@ class Person < ActiveRecord::Base
   end
 
   def attendance_today
-    attendance_records.on_date(Date.today).includes(:group).order(:attended_at)
+    attendance_records.on_date(Date.current).includes(:group).order(:attended_at)
   end
 
-  alias_method :destroy_for_real, :destroy
+  alias destroy_for_real destroy
   def destroy
     run_callbacks :destroy do
       update_attribute(:deleted, true)
@@ -259,7 +267,7 @@ class Person < ActiveRecord::Base
   end
 
   def self.new_with_default_sharing(attrs)
-    new(HashWithIndifferentAccess.new(attrs).merge(default_sharing_attributes))
+    new(ActiveSupport::HashWithIndifferentAccess.new(attrs).merge(default_sharing_attributes))
   end
 
   def self.default_sharing_attributes

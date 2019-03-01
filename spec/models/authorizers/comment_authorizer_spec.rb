@@ -1,10 +1,13 @@
-require_relative '../../rails_helper'
+require 'rails_helper'
 
 describe CommentAuthorizer do
-
   before do
     @user = FactoryGirl.create(:person)
-    @comment = FactoryGirl.create(:comment)
+    @comment = FactoryGirl.create(
+      :comment,
+      person: FactoryGirl.create(:person),
+      commentable: FactoryGirl.create(:verse)
+    )
   end
 
   it 'should not update comment' do
@@ -42,5 +45,4 @@ describe CommentAuthorizer do
       expect(@user).to be_able_to(:delete, @comment)
     end
   end
-
 end

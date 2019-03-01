@@ -1,4 +1,4 @@
-class Import < ActiveRecord::Base
+class Import < ApplicationRecord
   belongs_to :person
   has_many :rows, class_name: 'ImportRow', dependent: :delete_all
 
@@ -92,9 +92,10 @@ class Import < ActiveRecord::Base
   end
 
   def status_at_least?(desired)
-    number = self.class.statuses[desired.to_s]
-    fail 'unknown status' unless number
-    self[:status] >= number
+    desired_number = self.class.statuses[desired.to_s]
+    raise 'unknown status' unless desired_number
+    actual_number = self.class.statuses[self[:status]]
+    actual_number >= desired_number
   end
 
   def mappable_attributes
@@ -104,7 +105,7 @@ class Import < ActiveRecord::Base
   def preview_async
     return if new_record? || !(matched? || previewing?)
     self.status = :previewing
-    self.save!
+    save!
     ImportPreviewJob.perform_later(Site.current, id)
   end
 
@@ -116,7 +117,7 @@ class Import < ActiveRecord::Base
   def execute_async
     return if new_record? || !(matched? || previewed? || active?)
     self.status = :active
-    self.save!
+    save!
     ImportExecutionJob.perform_later(Site.current, id)
   end
 

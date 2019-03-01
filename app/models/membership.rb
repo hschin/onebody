@@ -1,13 +1,11 @@
-class Membership < ActiveRecord::Base
-
+class Membership < ApplicationRecord
   include Authority::Abilities
   self.authorizer_name = 'MembershipAuthorizer'
 
   belongs_to :group
   belongs_to :person
-  belongs_to :site
 
-  validates_uniqueness_of :group_id, scope: [:site_id, :person_id]
+  validates_uniqueness_of :group_id, scope: %i(site_id person_id)
 
   scope_by_site_id
 
@@ -15,7 +13,9 @@ class Membership < ActiveRecord::Base
   scope :order_by_name,     -> { order('people.first_name, people.last_name') }
   scope :leaders,           -> { where(leader: true) }
 
-  def family; person.family; end
+  def family
+    person.family
+  end
 
   serialize :roles, Array
   validate :validate_roles
@@ -30,18 +30,18 @@ class Membership < ActiveRecord::Base
 
   def generate_security_code
     begin
-      code = rand(999999)
+      code = rand(999_999)
       write_attribute :code, code
     end until code > 0
   end
 
   def self.sharing_columns
-    columns.map { |c| c.name }.select { |c| c =~ /^share_/ }
+    columns.map(&:name).select { |c| c =~ /^share_/ }
   end
 
   def only_admin?
-    person and group and
-    group.admin?(person, :exclude_global_admins) and
-    group.admins.length == 1
+    person && group &&
+      group.admin?(person, :exclude_global_admins) &&
+      group.admins.length == 1
   end
 end

@@ -1,15 +1,14 @@
-class StreamItem < ActiveRecord::Base
-  belongs_to :person
-  belongs_to :site
-  belongs_to :group
-  belongs_to :streamable, polymorphic: true
-  belongs_to :stream_item_group, class_name: 'StreamItem'
+class StreamItem < ApplicationRecord
+  belongs_to :person, optional: true
+  belongs_to :group, optional: true
+  belongs_to :streamable, polymorphic: true, optional: true
+  belongs_to :stream_item_group, class_name: 'StreamItem', optional: true
 
   has_many :items,
-    -> { order(created_at: :desc) },
-    class_name: 'StreamItem',
-    foreign_key: 'stream_item_group_id',
-    dependent: :nullify
+           -> { order(created_at: :desc) },
+           class_name: 'StreamItem',
+           foreign_key: 'stream_item_group_id',
+           dependent: :nullify
 
   scope :groups, -> { where(streamable_type: 'StreamItemGroup') }
 

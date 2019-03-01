@@ -1,6 +1,5 @@
 class Administration::Checkin::GroupsController < ApplicationController
-
-  before_filter :only_admins
+  before_action :only_admins
 
   def index
     @time = CheckinTime.find(params[:time_id]).decorate
@@ -70,12 +69,12 @@ class Administration::Checkin::GroupsController < ApplicationController
       group = Group.find(id)
       group.update_attribute(:attendance, true)
       opts = if params[:checkin_folder_id].present?
-        { checkin_folder_id: params[:checkin_folder_id] }
-      else
-        { checkin_time_id: @time.id }
+               { checkin_folder_id: params[:checkin_folder_id] }
+             else
+               { checkin_time_id: @time.id }
       end
       # NOTE cannot use first_or_create here due to https://github.com/rails/rails/issues/16668
-      group.group_times.create(opts) unless group.group_times.where(opts).any?
+      group.group_times.create!(opts) unless group.group_times.where(opts).any?
     end.compact
   end
 
@@ -91,14 +90,14 @@ class Administration::Checkin::GroupsController < ApplicationController
 
   def only_admins
     unless @logged_in.admin?(:manage_checkin)
-      render text: 'You must be an administrator to use this section.', layout: true, status: 401
-      return false
+      render html: 'You must be an administrator to use this section.', layout: true, status: 401
+      false
     end
   end
 
   def feature_enabled?
     unless Setting.get(:features, :checkin)
-      render text: 'This feature is unavailable.', layout: true
+      render html: 'This feature is unavailable.', layout: true
       false
     end
   end

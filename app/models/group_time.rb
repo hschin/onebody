@@ -1,7 +1,7 @@
-class GroupTime < ActiveRecord::Base
+class GroupTime < ApplicationRecord
   belongs_to :group
-  belongs_to :checkin_folder
-  belongs_to :checkin_time
+  belongs_to :checkin_folder, optional: true
+  belongs_to :checkin_time, optional: true
 
   default_scope -> { order(:sequence) }
 
@@ -17,7 +17,7 @@ class GroupTime < ActiveRecord::Base
     checkin_time || checkin_folder.try(:checkin_time)
   end
 
-  def remove_from_checkin_folder(placement=:above)
+  def remove_from_checkin_folder(placement = :above)
     cf = checkin_folder
     self.checkin_time = checkin_folder.checkin_time
     self.sequence = cf.sequence + (placement == :above ? 0 : 1)

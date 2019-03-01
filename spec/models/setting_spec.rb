@@ -1,10 +1,10 @@
-require_relative '../rails_helper'
+require 'rails_helper'
 
-describe Setting do
+describe Setting, type: :model do
   context 'Field Types' do
     it "should return an array for settings of type 'list'" do
       Setting.set(1, 'System', 'Suffixes', ['Text', 'A Date'].join("\n"))
-      expect(Setting.get(:system, :suffixes)).to eq(["Text", "A Date"])
+      expect(Setting.get(:system, :suffixes)).to eq(['Text', 'A Date'])
       Setting.set(1, 'System', 'Suffixes', '')
     end
 
@@ -28,7 +28,7 @@ describe Setting do
       end
 
       it 'creates the settings' do
-        expect(Setting.get(:name, :site)).to eq('CHURCH.IO')
+        expect(Setting.get(:name, :site)).to eq('OneBody')
       end
     end
 
@@ -45,14 +45,10 @@ describe Setting do
     end
 
     context 'given Site.current is not set' do
-      around do |example|
-        Site.with_current(nil) do
-          example.run
-        end
-      end
-
       it 'raises an error' do
-        expect { Setting.get(:foo, :bar) }.to raise_error(StandardError)
+        Site.with_current(nil) do
+          expect { Setting.get(:foo, :bar) }.to raise_error(StandardError)
+        end
       end
     end
   end
@@ -60,9 +56,9 @@ describe Setting do
   describe '.set' do
     context 'setting a non-existent value' do
       it 'raises an error' do
-        expect {
+        expect do
           Setting.set(:foo, :bar, 'value')
-        }.to raise_error(StandardError)
+        end.to raise_error(StandardError)
       end
     end
   end

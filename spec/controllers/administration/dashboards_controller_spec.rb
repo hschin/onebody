@@ -1,10 +1,10 @@
-require_relative '../../rails_helper'
+require 'rails_helper'
 
 describe Administration::DashboardsController, type: :controller do
   render_views
 
   before do
-    stub_request(:get, 'https://api.github.com/repos/churchio/onebody/releases')
+    stub_request(:get, 'https://api.github.com/repos/seven1m/onebody/releases')
       .to_return(body: File.read(fixture_path.join('releases.json')))
   end
 
@@ -12,7 +12,8 @@ describe Administration::DashboardsController, type: :controller do
     let!(:person) { FactoryGirl.create(:person) }
 
     it 'should return unauthorized' do
-      get :show, nil, logged_in_id: person.id
+      get :show,
+          session: { logged_in_id: person.id }
       expect(response.status).to eq(401)
     end
   end
@@ -21,7 +22,8 @@ describe Administration::DashboardsController, type: :controller do
     let!(:admin) { FactoryGirl.create(:person, :admin_manage_updates) }
 
     it 'should render the dashboard' do
-      get :show, nil, logged_in_id: admin.id
+      get :show,
+          session: { logged_in_id: admin.id }
       expect(response.status).to eq(200)
       expect(response).to render_template(:show)
     end

@@ -1,14 +1,13 @@
 class FriendsController < ApplicationController
-
-  before_filter :person_must_be_user, except: %w(index)
+  before_action :person_must_be_user, except: %w(index)
 
   def index
     @person = Person.find(params[:person_id])
     if @logged_in.can_read?(@person)
       @pending = me? ? @person.pending_friendship_requests : []
-      @friendships = @person.friendships.to_a.select { |f| f.friend and @logged_in.can_read?(f.friend) }
+      @friendships = @person.friendships.to_a.select { |f| f.friend && @logged_in.can_read?(f.friend) }
     else
-      render text: t('people.not_found'), layout: true, status: 404
+      render html: t('people.not_found'), layout: true, status: 404
     end
   end
 
@@ -36,7 +35,7 @@ class FriendsController < ApplicationController
       flash[:notice] = t('people.friendship_rejected')
       redirect_to person_friends_path(@person)
     else
-      render text: t('people.friendship_must_specify'), layout: true, status: 500
+      render html: t('people.friendship_must_specify'), layout: true, status: 500
     end
   end
 
@@ -47,7 +46,7 @@ class FriendsController < ApplicationController
       @friendship.destroy
       redirect_to person_friends_path(@person)
     else
-      render text: t('people.friend_not_found'), layout: true, status: 404
+      render html: t('people.friend_not_found'), layout: true, status: 404
     end
   end
 
@@ -58,16 +57,15 @@ class FriendsController < ApplicationController
         f.update_attribute :ordering, index
       end
     end
-    render nothing: true
+    head :ok
   end
 
   private
 
-    def person_must_be_user
-      unless @logged_in.id == params[:person_id].to_i
-        render text: t('people.friendship_manage'), layout: true, status: 401
-        return false
-      end
+  def person_must_be_user
+    unless @logged_in.id == params[:person_id].to_i
+      render html: t('people.friendship_manage'), layout: true, status: 401
+      false
     end
-
+  end
 end

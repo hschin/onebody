@@ -1,13 +1,13 @@
 .form-group
   = form.label :name
   .input-group
-    = form.text_field :name, onkeyup: 'update_address(this.value)', class: 'form-control'
+    = form.text_field :name, class: 'form-control'
     %span.input-group-addon{ title: t('groups.edit.required_field') }
       = icon 'fa fa-star text-red'
 .form-group
   = form.label :category
   .input-group
-    = react_component 'SelectWithNew', name: 'group[category]', value: @group.category, options: group_categories, className: 'form-control', includeBlank: true
+    = react_component 'ReactComponents.SelectWithNew', name: 'group[category]', value: @group.category, options: group_categories, className: 'form-control', includeBlank: true
     %span.input-group-addon{ title: t('groups.edit.required_field') }
       = icon 'fa fa-star text-red'
   %span.help-block

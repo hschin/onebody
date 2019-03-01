@@ -1,7 +1,6 @@
-require_relative '../rails_helper'
+require 'rails_helper'
 
-describe AttendanceRecord do
-
+describe AttendanceRecord, type: :model do
   before do
     @attendance_record = FactoryGirl.create(:attendance_record)
   end

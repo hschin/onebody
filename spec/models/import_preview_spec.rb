@@ -1,6 +1,6 @@
-require_relative '../rails_helper'
+require 'rails_helper'
 
-describe ImportPreview do
+describe ImportPreview, type: :model do
   let(:import) do
     FactoryGirl.create(
       :import,
@@ -51,14 +51,14 @@ describe ImportPreview do
     it 'updates the status of the rows' do
       subject.preview
       expect(row1.reload.attributes).to include(
-        'status' => 1
+        'status' => 'previewed'
       )
     end
 
     it 'does not actually create person or family records' do
-      expect {
+      expect do
         subject.preview
-      }.not_to change { [Person.count, Family.count] }
+      end.not_to change { [Person.count, Family.count] }
       expect(row1.reload.attributes).to include(
         'created_person' => true,
         'created_family' => true,

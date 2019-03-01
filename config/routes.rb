@@ -9,13 +9,9 @@ OneBody::Application.routes.draw do
   end
 
   resources :people do
-    collection do
-      post :batch
-    end
     member do
       get :favs
       get :testimony
-      get :login
     end
     resources :friends do
       collection do
@@ -123,7 +119,7 @@ OneBody::Application.routes.draw do
   resources :tags, only: :show
 
   resources :pictures, :prayer_signups, :authentications, :shares,
-            :comments, :prayer_requests, :generated_files
+            :comments, :prayer_requests, :generated_files, :reports
 
   resources :verses do
     get 'search', on: :collection
@@ -218,6 +214,7 @@ OneBody::Application.routes.draw do
       root to: 'dashboards#show'
     end
     resources :custom_fields
+    resources :custom_field_tabs
     resource :email_setup
   end
 

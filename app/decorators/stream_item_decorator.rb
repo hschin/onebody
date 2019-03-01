@@ -8,22 +8,22 @@ class StreamItemDecorator < Draper::Decorator
     shared? && !(streamable_type == 'Message' && group_id.nil?)
   end
 
-  def to_html(options = {})
+  def to_html(_options = {})
     return unless publishable?
     h.content_tag(:li) do
       if streamable_type == 'StreamItemGroup'
         group_content
       else
         icon +
-        h.content_tag(:div, class: 'timeline-item') do
-          h.content_tag(:span, class: 'time') do
-            h.icon('fa fa-clock-o') + ' ' + created_at.to_s(:time) +
-              (new? ? new_badge : '')
-          end +
-          header +
-          body +
-          footer
-        end
+          h.content_tag(:div, class: 'timeline-item') do
+            h.content_tag(:span, class: 'time') do
+              h.icon('fa fa-clock-o') + ' ' + created_at.to_s(:time) +
+                (new? ? new_badge : '')
+            end +
+              header +
+              body +
+              footer
+          end
       end
     end.html_safe
   end
@@ -38,7 +38,7 @@ class StreamItemDecorator < Draper::Decorator
           count: items.count,
           default: ''
         ).html_safe +
-        footer(class: 'timeline-group-load-more', data: { 'group-url' => url })
+          footer(class: 'timeline-group-load-more', data: { 'group-url' => url })
       end
     end
   end
@@ -66,14 +66,14 @@ class StreamItemDecorator < Draper::Decorator
 
   def header
     h.content_tag(:h3, class: 'timeline-header') do
-      if person
-        who = h.content_tag(:div, class: 'user-header') do
-          h.concat(h.image_tag(h.avatar_path(person), {class: 'avatar tn img-circle'}).html_safe)
-          h.concat(h.link_to(person.name, person))
-        end
-      else
-        who = I18n.t('stream.header.noone')
-      end
+      who = if person
+              h.content_tag(:div, class: 'user-header') do
+                h.concat(h.image_tag(h.avatar_path(person), class: 'avatar tn img-circle').html_safe)
+                h.concat(h.link_to(person.name, person))
+              end
+            else
+              I18n.t('stream.header.noone')
+            end
       case streamable_type
       when 'Album'
         args = {
@@ -94,7 +94,11 @@ class StreamItemDecorator < Draper::Decorator
       when 'Verse'
         I18n.t('stream.header.verse', who: who, title: h.link_to(title, path)).html_safe
       when 'NewsItem'
-        I18n.t('stream.header.news', who: who, title: h.link_to(title, path)).html_safe
+        if person
+          I18n.t('stream.header.news', who: who, title: h.link_to(title, path)).html_safe
+        else
+          h.link_to(title, path)
+        end
       when 'Message'
         I18n.t('stream.header.message', who: who, group: h.link_to(group.name, group)).html_safe
       when 'Person'
@@ -112,7 +116,7 @@ class StreamItemDecorator < Draper::Decorator
   def body
     h.content_tag(:div, class: "timeline-body #{streamable_css_class}") do
       if streamable_type == 'Message'
-        h.truncate_html(h.render_message_body(object), length: MAX_BODY_SIZE).html_safe
+        truncate_html(h.render_message_body(object), length: MAX_BODY_SIZE).html_safe
       elsif streamable_type == 'Person' && streamable
         h.link_to streamable, class: 'btn btn-info' do
           I18n.t('stream.body.person.button', person: streamable.name)
@@ -126,12 +130,12 @@ class StreamItemDecorator < Draper::Decorator
               else
                 h.content_tag(:h4, I18n.t('prayer_requests.answer.heading'))
               end +
-              h.preserve_breaks(streamable.answer)
+                h.preserve_breaks(streamable.answer)
             end
           end
         end.html_safe
       elsif object.body
-        h.truncate_html(h.sanitize_html(h.auto_link(object.body)), length: MAX_BODY_SIZE).html_safe
+        truncate_html(h.sanitize_html(h.auto_link(object.body)), length: MAX_BODY_SIZE).html_safe
       elsif streamable_type == 'Album'
         pics = Array(object.context['picture_ids'])
         pics = pics[-MAX_PICTURES..-1] if pics.length > MAX_PICTURES
@@ -160,7 +164,7 @@ class StreamItemDecorator < Draper::Decorator
       h.link_to(
         label,
         path,
-        class: "btn btn-primary btn-xs #{options[:class]}",
+        class: "btn btn-default btn-xs #{options[:class]}",
         data: options[:data]
       )
     end
@@ -188,5 +192,9 @@ class StreamItemDecorator < Draper::Decorator
 
   def new_badge
     h.content_tag(:small, h.t('new'), class: 'badge bg-green')
+  end
+
+  def truncate_html(html, length:)
+    HTML_Truncator.truncate(html, length)
   end
 end

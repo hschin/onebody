@@ -1,6 +1,6 @@
-require_relative '../rails_helper'
+require 'rails_helper'
 
-describe Site do
+describe Site, type: :model do
   describe 'callbacks' do
     context 'when the site is saved and Features/SSL setting is true' do
       around do |example|
@@ -47,7 +47,7 @@ describe Site do
   end
 
   describe '#destroy' do
-    let(:site) { Site.create!(name: 'Church.IO', host: 'church.io') }
+    let(:site) { Site.create!(name: 'The Church', host: 'church.com') }
 
     it 'raises an error' do
       expect { site.destroy }.to raise_error(StandardError)
@@ -55,7 +55,7 @@ describe Site do
   end
 
   describe '#destroy_for_real' do
-    let(:site) { Site.create!(name: 'Church.IO', host: 'church.io') }
+    let(:site) { Site.create!(name: 'The Church', host: 'church.com') }
 
     it 'deletes the site' do
       site.destroy_for_real

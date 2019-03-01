@@ -10,7 +10,7 @@
   - if @logged_in.admin?(:view_hidden_profiles) and params[:show_hidden].nil?
     = t("search.not_showing_hidden_people")
 
-= pagination @people, params: params_without_action
+= pagination @people, params: @search_params
 
 - if @people and @people.any?
 
@@ -46,4 +46,4 @@
               = person.name
 
 
-= pagination @people, params: params_without_action
+= pagination @people, params: @search_params

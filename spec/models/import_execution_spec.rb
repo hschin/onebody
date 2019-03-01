@@ -1,6 +1,6 @@
-require_relative '../rails_helper'
+require 'rails_helper'
 
-describe ImportExecution do
+describe ImportExecution, type: :model do
   let(:import) do
     FactoryGirl.create(
       :import,
@@ -21,7 +21,8 @@ describe ImportExecution do
         'state'     => 'family_state',
         'zip'       => 'family_zip',
         'email'     => 'email',
-        'rel'       => 'relationships'
+        'rel'       => 'relationships',
+        'birthday'  => 'birthday'
       }
     )
   end
@@ -50,9 +51,13 @@ describe ImportExecution do
     end
 
     context 'given custom attributes' do
-      let(:string_field) { FactoryGirl.create(:custom_field, name: 'foo',  format: 'string') }
-      let(:date_field)   { FactoryGirl.create(:custom_field, name: 'date', format: 'date') }
-      let(:bool_field)   { FactoryGirl.create(:custom_field, name: 'bool', format: 'boolean') }
+      let(:string_field) { FactoryGirl.create(:custom_field, name: 'foo',    format: 'string') }
+      let(:date_field)   { FactoryGirl.create(:custom_field, name: 'date',   format: 'date') }
+      let(:bool_field)   { FactoryGirl.create(:custom_field, name: 'bool',   format: 'boolean') }
+      let(:select_field) { FactoryGirl.create(:custom_field, name: 'select', format: 'select') }
+
+      let!(:select_option1) { select_field.options.create!(label: 'aaa') }
+      let!(:select_option2) { select_field.options.create!(label: 'bbb') }
 
       let(:import) do
         FactoryGirl.create(
@@ -64,25 +69,27 @@ describe ImportExecution do
             'first' => 'first_name',
             'foo'   => string_field.slug,
             'date'  => date_field.slug,
-            'bool'  => bool_field.slug
+            'bool'  => bool_field.slug,
+            'sel'   => select_field.slug
           }
         )
       end
 
       let!(:person) { FactoryGirl.create(:person) }
-      let!(:row) { create_row(id: person.id, first: 'Changed', foo: 'bar', date: '2017-01-01', bool: '1') }
+      let!(:row) { create_row(id: person.id, first: 'Changed', foo: 'bar', date: '2017-01-01', bool: '1', sel: 'Aaa') }
 
       it 'updates custom fields' do
-        expect {
+        expect do
           subject.execute
-        }.to change {
+        end.to change {
           person.reload.fields
         }.from(
           {}
         ).to(
           string_field.id => 'bar',
           date_field.id   => '2017-01-01',
-          bool_field.id   => '1'
+          bool_field.id   => '1',
+          select_field.id => select_option1.id.to_s
         )
       end
 
@@ -91,11 +98,62 @@ describe ImportExecution do
         subject.execute
         expect(row.reload.updated_person?).to eq(true)
         expect(row.attribute_changes['person']).to eq(
-          'first_name'       => ['John', 'Changed'],
+          'first_name'       => %w(John Changed),
           string_field.slug  => [nil, 'bar'],
           date_field.slug    => [nil, '2017-01-01'],
-          bool_field.slug    => [nil, '1']
+          bool_field.slug    => [nil, '1'],
+          select_field.slug  => [nil, select_option1.id.to_s]
         )
+      end
+
+      context 'when only a custom field is modified' do
+        let!(:row) do
+          create_row(id: person.id, foo: 'changed')
+        end
+
+        it 'records that the person was changed' do
+          expect(row.attribute_changes).to be_nil
+          subject.execute
+          expect(row.reload.updated_person?).to eq(true)
+        end
+      end
+
+      context 'when a select field option cannot be matched' do
+        let!(:row) do
+          create_row(id: person.id, sel: 'xxx')
+        end
+
+        it 'does not update and records the error message' do
+          subject.execute
+          expect(row.reload.attributes).to include(
+            'created_person'   => false,
+            'created_family'   => false,
+            'updated_person'   => false,
+            'updated_family'   => false,
+            'errored'          => true,
+            'attribute_errors' => {
+              select_field.slug => 'Option with label "xxx" could not be found.'
+            }
+          )
+        end
+      end
+
+      context 'when a date just has slashes' do
+        let!(:row) { create_row(id: person.id, first: 'Changed', foo: 'bar', date: ' / / ', bool: '1') }
+
+        it 'treats the date as nil' do
+          expect do
+            subject.execute
+          end.to change {
+            person.reload.fields
+          }.from(
+            {}
+          ).to(
+            string_field.id => 'bar',
+            date_field.id   => nil,
+            bool_field.id   => '1'
+          )
+        end
       end
     end
 
@@ -119,10 +177,10 @@ describe ImportExecution do
       let!(:row) { create_row(id: person.id, first: 'Changed', site_id: '100', password: 'pwnd', consent: 'pwnd') }
 
       it 'does not update anything dangerous' do
-        expect {
+        expect do
           subject.execute
-        }.not_to change {
-          person.reload.attributes.reject { |k| !%w(site_id encrypted_password parental_consent).include?(k) }
+        end.not_to change {
+          person.reload.attributes.select { |k| %w(site_id encrypted_password parental_consent).include?(k) }
         }
         expect(row.reload.updated_person).to eq(true)
         expect(person.reload.first_name).to eq('Changed')
@@ -135,9 +193,9 @@ describe ImportExecution do
       let!(:pending_row)   { create_row({ id: person.id, first: 'Changed' }, status: :previewed) }
 
       it 'only imports the pending rows' do
-        expect {
+        expect do
           subject.execute
-        }.not_to change {
+        end.not_to change {
           completed_row.reload.attributes
         }
         expect(pending_row.reload.updated_person).to eq(true)
@@ -176,7 +234,7 @@ describe ImportExecution do
           it 'records what attributes changed' do
             expect(row.reload.attribute_changes).to eq(
               'person' => {
-                'last_name' => ['Smith', 'Jones'],
+                'last_name' => %w(Smith Jones),
                 'email'     => ['old@example.com', 'new@example.com']
               },
               'family' => {}
@@ -185,7 +243,7 @@ describe ImportExecution do
 
           it 'updates the status of the rows' do
             expect(row.reload.attributes).to include(
-              'status' => 2
+              'status' => 'imported'
             )
           end
 
@@ -199,7 +257,7 @@ describe ImportExecution do
 
           before { subject.execute }
 
-          it 'does not update and records the erorr message' do
+          it 'does not update and records the error message' do
             expect(row.reload.attributes).to include(
               'created_person'   => false,
               'created_family'   => false,
@@ -257,7 +315,7 @@ describe ImportExecution do
           it 'records what attributes changed' do
             expect(row.reload.attribute_changes).to eq(
               'person' => {
-                'last_name' => ['Smith', 'Jones']
+                'last_name' => %w(Smith Jones)
               },
               'family' => {}
             )
@@ -293,7 +351,7 @@ describe ImportExecution do
           it 'records what attributes changed' do
             expect(row.reload.attribute_changes).to eq(
               'person' => {
-                'last_name'     => ['Smith', 'Jones'],
+                'last_name'     => %w(Smith Jones),
                 'email_changed' => [true, false]
               },
               'family' => {}
@@ -353,10 +411,10 @@ describe ImportExecution do
         it 'records what attributes changed' do
           expect(row.reload.attribute_changes).to eq(
             'person' => {
-              'last_name' => ['Smith', 'Jones'],
+              'last_name' => %w(Smith Jones),
               'family_id' => [family.id, person.reload.family_id]
             },
-              'family' => {}
+            'family' => {}
           )
         end
       end
@@ -379,7 +437,9 @@ describe ImportExecution do
           )
         end
 
-        before { subject.execute }
+        before do
+          subject.execute
+        end
 
         it 'geocodes the family' do
           expect(person.reload.family.attributes).to include(
@@ -411,11 +471,11 @@ describe ImportExecution do
         it 'records what attributes changed' do
           expect(row.reload.attribute_changes).to eq(
             'person' => {
-              'last_name' => ['Smith', 'Jones']
+              'last_name' => %w(Smith Jones)
             },
             'family' => {
               'name'      => ['John Smith', 'John Jones'],
-              'last_name' => ['Smith', 'Jones']
+              'last_name' => %w(Smith Jones)
             }
           )
         end
@@ -809,6 +869,25 @@ describe ImportExecution do
         it 'records the matched person and familiy' do
           expect(row.reload.person).to eq(person)
           expect(row.family).to eq(family)
+        end
+      end
+
+      context 'given a row with a birthday that contains only slashes' do
+        let(:family) { FactoryGirl.create(:family, name: "John Jones") }
+        let!(:row) { create_row(first: 'Jimmy', last: 'Jones', fam_name: family.name, birthday: '/ /') }
+
+        before { subject.execute }
+
+        it 'creates the person and sets the birthday to blank' do
+          expect(row.reload.attributes).to include(
+            'created_person' => true,
+            'created_family' => false,
+            'updated_person' => false,
+            'errored'        => false
+          )
+          expect(subject.attributes_for_person(row)).to include(
+            'birthday' => nil
+          )
         end
       end
     end

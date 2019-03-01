@@ -1,5 +1,5 @@
 class RelationshipsController < ApplicationController
-  before_filter :only_admins
+  before_action :only_admins
 
   def index
     if params[:person_id]
@@ -7,7 +7,7 @@ class RelationshipsController < ApplicationController
     elsif params[:family_id]
       family_index
     else
-      render text: t('relationships.no_person_selected'), layout: true
+      render html: t('relationships.no_person_selected'), layout: true
     end
   end
 
@@ -25,8 +25,8 @@ class RelationshipsController < ApplicationController
 
   def family_index
     @family = Family.undeleted.find(params[:family_id])
-    people_ids = @family.people.map { |p| p.id }
-    @relationships = Relationship.where("person_id in (?) and related_id in (?)", people_ids, people_ids)
+    people_ids = @family.people.map(&:id)
+    @relationships = Relationship.where('person_id in (?) and related_id in (?)', people_ids, people_ids)
     @unique_relationships = {}
     @relationships.each do |relationship|
       @unique_relationships[relationship.related] ||= []
@@ -43,7 +43,7 @@ class RelationshipsController < ApplicationController
     elsif params[:family_id]
       create_for_family
     else
-      render text: t('relationships.no_person_selected'), layout: true
+      render html: t('relationships.no_person_selected'), layout: true
     end
   end
 
@@ -87,7 +87,7 @@ class RelationshipsController < ApplicationController
   def batch
     @person = Person.undeleted.find(params[:person_id])
     params[:ids].to_a.each do |id|
-      if relationship = Relationship.where("id = ? and (person_id = ? or related_id = ?)", id, @person.id, @person.id).first
+      if relationship = Relationship.where('id = ? and (person_id = ? or related_id = ?)', id, @person.id, @person.id).first
         if params[:delete]
           relationship.destroy
         elsif params[:reciprocate]
@@ -106,11 +106,10 @@ class RelationshipsController < ApplicationController
 
   private
 
-    def only_admins
-      unless @logged_in.admin?(:edit_profiles)
-        render text: t('only_admins'), layout: true, status: 401
-        return false
-      end
+  def only_admins
+    unless @logged_in.admin?(:edit_profiles)
+      render html: t('only_admins'), layout: true, status: 401
+      false
     end
-
+  end
 end

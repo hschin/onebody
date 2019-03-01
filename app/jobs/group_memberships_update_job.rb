@@ -1,4 +1,4 @@
-class GroupMembershipsUpdateJob < ActiveJob::Base
+class GroupMembershipsUpdateJob < ApplicationJob
   queue_as :group_memberships_update
 
   def perform(site)
@@ -9,4 +9,3 @@ class GroupMembershipsUpdateJob < ActiveJob::Base
     end
   end
 end
-

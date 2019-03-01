@@ -1,6 +1,6 @@
-require_relative '../rails_helper'
+require 'rails_helper'
 
-describe Verse do
+describe Verse, type: :model do
   before do
     @verse = Verse.create(reference: '1 John 1:9', text: 'If we confess our sins, he is faithful and righteous to forgive us the sins, and to cleanse us from all unrighteousness.')
   end
@@ -65,7 +65,7 @@ describe Verse do
     end
 
     before do
-      stub_request(:get, "http://bible-api.com/John%203:16?translation=web")
+      stub_request(:get, 'http://bible-api.com/John%203:16?translation=web')
         .to_return(body: payload.to_json)
     end
 

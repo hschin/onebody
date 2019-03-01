@@ -1,71 +1,59 @@
 require 'uri'
 require 'digest/md5'
 
-class Message < ActiveRecord::Base
-
+class Message < ApplicationRecord
   include Authority::Abilities
   self.authorizer_name = 'MessageAuthorizer'
 
   MESSAGE_ID_RE = /<(\d+)_([0-9abcdef]{6})_/
   MESSAGE_ID_RE_IN_BODY = /id:\s*(\d+)_([0-9abcdef]{6})/i
 
-  belongs_to :group
-  belongs_to :person
-  belongs_to :to, class_name: 'Person', foreign_key: 'to_person_id'
-  belongs_to :parent, class_name: 'Message', foreign_key: 'parent_id'
+  belongs_to :group, optional: true
+  belongs_to :person, optional: true
+  belongs_to :to, class_name: 'Person', foreign_key: 'to_person_id', optional: true
+  belongs_to :parent, class_name: 'Message', foreign_key: 'parent_id', optional: true
   has_many :children, -> { where('to_person_id is null') }, class_name: 'Message', foreign_key: 'parent_id', dependent: :destroy
   has_many :attachments, dependent: :destroy
   has_many :log_items, -> { where(loggable_type: 'Message') }, foreign_key: 'loggable_id'
-  belongs_to :site
 
   scope_by_site_id
 
-  scope :same_as, -> m { where('id != ?', m.id || 0).where(person_id: m.person_id, subject: m.subject, body: m.body, to_person_id: m.to_person_id, group_id: m.group_id).where('created_at >= ?', 1.day.ago) }
+  scope :same_as, ->(m) { where('id != ?', m.id || 0).where(person_id: m.person_id, subject: m.subject, body: m.body, to_person_id: m.to_person_id, group_id: m.group_id).where('created_at >= ?', 1.day.ago) }
 
   validates_presence_of :person_id
   validates_presence_of :subject
   validates_length_of :subject, minimum: 2
 
   validates_each :to_person_id, allow_nil: true do |record, attribute, value|
-    if attribute.to_s == 'to_person_id' and value and record.to and record.to.email.nil?
+    if attribute.to_s == 'to_person_id' && value && record.to && record.to.email.nil?
       record.errors.add attribute, :invalid
     end
   end
 
   validates_each :body do |record, attribute, value|
-    if attribute.to_s == 'body' and value.to_s.blank? and record.html_body.to_s.blank?
+    if attribute.to_s == 'body' && value.to_s.blank? && record.html_body.to_s.blank?
       record.errors.add attribute, :blank
     end
   end
 
   def top
     top = self
-    while top.parent
-      top = top.parent
-    end
-    return top
+    top = top.parent while top.parent
+    top
   end
 
   before_save :remove_unsubscribe_link
 
   def remove_unsubscribe_link
-    if body
-      body.gsub!(/http:\/\/.*?person_id=\d+&code=\d+/i, '--removed--')
-    end
-    if html_body
-      html_body.gsub!(/http:\/\/.*?person_id=\d+&code=\d+/i, '--removed--')
-    end
+    body.gsub!(/http:\/\/.*?person_id=\d+&code=\d+/i, '--removed--') if body
+    html_body.gsub!(/http:\/\/.*?person_id=\d+&code=\d+/i, '--removed--') if html_body
   end
 
   before_save :remove_message_id_in_body
 
   def remove_message_id_in_body
-    if body
-      body.gsub! MESSAGE_ID_RE_IN_BODY, ''
-    end
-    if html_body
-      html_body.gsub! MESSAGE_ID_RE_IN_BODY, ''
-    end
+    body.gsub! MESSAGE_ID_RE_IN_BODY, '' if body
+    html_body.gsub! MESSAGE_ID_RE_IN_BODY, '' if html_body
   end
 
   attr_accessor :member_ids
@@ -79,7 +67,7 @@ class Message < ActiveRecord::Base
       self.group_id = nil
       self.to = members.first
       members[1..members.count].each do |recipient|
-        Message.create(attributes.reject {|k,v| k == 'id'}.merge "to_person_id" => recipient.id)
+        Message.create(attributes.reject { |k, _v| k == 'id' }.merge('to_person_id' => recipient.id))
       end
     end
   end
@@ -120,7 +108,7 @@ class Message < ActiveRecord::Base
     end
   end
 
-  def send_to_group(sent_to=[])
+  def send_to_group(sent_to = [])
     return unless group
     group.people.each do |person|
       if should_send_group_email_to_person?(person, sent_to)
@@ -131,10 +119,10 @@ class Message < ActiveRecord::Base
   end
 
   def should_send_group_email_to_person?(person, sent_to)
-    person.email.present? and
-    person.email =~ VALID_EMAIL_ADDRESS and
-    group.get_options_for(person).get_email? and
-    not sent_to.include?(person.email)
+    person.email.present? &&
+      person.email =~ VALID_EMAIL_ADDRESS &&
+      group.get_options_for(person).get_email? &&
+      !sent_to.include?(person.email)
   end
 
   def id_and_code
@@ -171,11 +159,11 @@ class Message < ActiveRecord::Base
 
   def disable_email_instructions(to_person)
     msg = []
-    if group
-      msg << I18n.t('messages.email.disable_group_email', url: disable_group_email_link(to_person))
-    else
-      msg << I18n.t('messages.email.disable_all_email', url: "#{Setting.get(:url, :site)}privacy")
-    end
+    msg << if group
+             I18n.t('messages.email.disable_group_email', url: disable_group_email_link(to_person))
+           else
+             I18n.t('messages.email.disable_all_email', url: "#{Setting.get(:url, :site)}privacy")
+           end
     msg.join("\n") + "\n"
   end
 
@@ -184,7 +172,7 @@ class Message < ActiveRecord::Base
     "#{Setting.get(:url, :site)}groups/#{group.id}/memberships/#{to_person.id}?code=#{to_person.feed_code}&email=off"
   end
 
-  def email_from(to_person)
+  def email_from(_to_person)
     if group
       from_address("#{person.name} [#{group.name}]")
     else
@@ -193,16 +181,16 @@ class Message < ActiveRecord::Base
   end
 
   def email_reply_to(to_person)
-    if not to_person.messages_enabled?
+    if !to_person.messages_enabled?
       "\"#{I18n.t('messages.do_not_reply')}\" <#{Site.current.noreply_email}>"
     else
       from_address(person.name, :real)
     end
   end
 
-  def from_address(name, real=false)
+  def from_address(name, real = false)
     if person.email.present?
-      %("#{name.gsub(/"/, '')}" <#{real ? person.email : Site.current.noreply_email}>)
+      %("#{name.delete('"')}" <#{real ? person.email : Site.current.noreply_email}>)
     else
       "\"#{I18n.t('messages.do_not_reply')}\" <#{Site.current.noreply_email}>"
     end
@@ -212,7 +200,7 @@ class Message < ActiveRecord::Base
 
   def generate_security_code
     begin
-      code = rand(999999)
+      code = rand(999_999)
       write_attribute :code, code
     end until code > 0
   end
@@ -222,7 +210,7 @@ class Message < ActiveRecord::Base
   end
 
   def streamable?
-    person_id and not to_person_id and group
+    person_id && !to_person_id && group
   end
 
   after_create :create_as_stream_item
@@ -246,7 +234,7 @@ class Message < ActiveRecord::Base
 
   def update_stream_items
     return unless streamable?
-    StreamItem.where(streamable_type: "Message", streamable_id: id).each do |stream_item|
+    StreamItem.where(streamable_type: 'Message', streamable_id: id).each do |stream_item|
       stream_item.title = subject
       if html_body.present?
         stream_item.body = html_body
@@ -262,7 +250,7 @@ class Message < ActiveRecord::Base
   after_destroy :delete_stream_items
 
   def delete_stream_items
-    StreamItem.destroy_all(streamable_type: 'Message', streamable_id: id)
+    StreamItem.where(streamable_type: 'Message', streamable_id: id).destroy_all
   end
 
   def self.preview(attributes)
@@ -271,7 +259,7 @@ class Message < ActiveRecord::Base
   end
 
   def self.create_with_attachments(attributes, files)
-    message = Message.create(attributes.update(dont_send: true))
+    message = Message.create(attributes.to_h.update(dont_send: true))
     unless message.errors.any?
       files.select { |f| f && f.size > 0 }.each do |file|
         attachment = message.attachments.create(

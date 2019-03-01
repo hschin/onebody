@@ -1,5 +1,5 @@
 class Administration::DeletedPeopleController < ApplicationController
-  before_filter :only_admins
+  before_action :only_admins
 
   VALID_SORT_COLS = [
     'people.id',
@@ -11,19 +11,19 @@ class Administration::DeletedPeopleController < ApplicationController
     'families.name',
     'families.deleted',
     'people.updated_at desc'
-  ]
+  ].freeze
 
   def index
     unless params[:sort].to_s.split(',').all? { |col| VALID_SORT_COLS.include?(col) }
       params[:sort] = 'people.updated_at desc'
     end
-    conditions = {deleted: true}
+    conditions = { deleted: true }
     if params[:search].is_a?(Hash)
-      params[:search].reject! { |k, v| !%w(id legacy_id last_name first_name).include?(k) }
+      params[:search].select! { |k, _v| %w(id legacy_id last_name first_name).include?(k) }
       conditions.reverse_merge!(params[:search])
     end
     @people = Person.includes(:family).references(:family).where(conditions).order(params[:sort]).paginate(page: params[:page], per_page: 100)
-    @families = Family.undeleted.where(["(select count(id) from people where deleted = ? and family_id=families.id) = 0", false]).order('name')
+    @families = Family.undeleted.where(['(select count(id) from people where deleted = ? and family_id=families.id) = 0', false]).order('name')
   end
 
   def batch
@@ -34,11 +34,11 @@ class Administration::DeletedPeopleController < ApplicationController
         person.update_attribute(:deleted, false) if person.deleted?
       elsif params[:purge]
         unless person.deleted?
-          render text: t('people.not_deleted'), layout: true, status: 401
+          render html: t('people.not_deleted'), layout: true, status: 401
           return
         end
         person.destroy_for_real
-        if params[:purge_empty_families] and person.family and person.family.people.none?
+        if params[:purge_empty_families] && person.family && person.family.people.none?
           person.family.destroy_for_real
         end
       end
@@ -48,11 +48,10 @@ class Administration::DeletedPeopleController < ApplicationController
 
   private
 
-    def only_admins
-      unless @logged_in.admin?(:edit_profiles)
-        render text: t('only_admins'), layout: true, status: 401
-        return false
-      end
+  def only_admins
+    unless @logged_in.admin?(:edit_profiles)
+      render html: t('only_admins'), layout: true, status: 401
+      false
     end
-
+  end
 end

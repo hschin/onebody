@@ -1,11 +1,9 @@
-class PrayerRequest < ActiveRecord::Base
-
+class PrayerRequest < ApplicationRecord
   include Authority::Abilities
   self.authorizer_name = 'PrayerRequestAuthorizer'
 
   belongs_to :group
   belongs_to :person
-  belongs_to :site
 
   scope_by_site_id
 
@@ -50,9 +48,9 @@ class PrayerRequest < ActiveRecord::Base
 
   def update_stream_items
     return unless streamable?
-    StreamItem.where(streamable_type: "PrayerRequest", streamable_id: id).each do |stream_item|
+    StreamItem.where(streamable_type: 'PrayerRequest', streamable_id: id).each do |stream_item|
       stream_item.body = body
-      stream_item.created_at = updated_at if answer_changed?
+      stream_item.created_at = updated_at if will_save_change_to_attribute?(:answer)
       stream_item.save
     end
   end
@@ -60,7 +58,7 @@ class PrayerRequest < ActiveRecord::Base
   after_destroy :delete_stream_items
 
   def delete_stream_items
-    StreamItem.destroy_all(streamable_type: 'PrayerRequest', streamable_id: id)
+    StreamItem.where(streamable_type: 'PrayerRequest', streamable_id: id).destroy_all
   end
 
   def send_group_email

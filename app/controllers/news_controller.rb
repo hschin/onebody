@@ -1,7 +1,6 @@
 class NewsController < ApplicationController
-
-  skip_before_filter :authenticate_user, only: %w(index)
-  before_filter :authenticate_user_with_code_or_session, only: %w(index)
+  skip_before_action :authenticate_user, only: %w(index)
+  before_action :authenticate_user_with_code_or_session, only: %w(index)
 
   def index
     respond_to do |format|
@@ -12,7 +11,7 @@ class NewsController < ApplicationController
           if the_url = Setting.get(:url, :news)
             redirect_to the_url
           else
-            render text: t('feature_unavailable')
+            render plain: t('feature_unavailable')
           end
         end
       end
@@ -24,7 +23,7 @@ class NewsController < ApplicationController
           if the_url = Setting.get(:url, :news)
             redirect_to the_url
           else
-            render text: t('feature_unavailable')
+            render plain: t('feature_unavailable')
           end
         end
       end
@@ -43,7 +42,7 @@ class NewsController < ApplicationController
           if the_url = Setting.get(:url, :news)
             redirect_to the_url
           else
-            render text: t('feature_unavailable')
+            render plain: t('feature_unavailable')
           end
         end
       end
@@ -51,15 +50,15 @@ class NewsController < ApplicationController
   end
 
   def new
-    if @logged_in.admin?(:manage_news) or Setting.get(:features, :news_by_users)
+    if @logged_in.admin?(:manage_news) || Setting.get(:features, :news_by_users)
       @news_item = NewsItem.new
     else
-      render text: t('not_authorized'), layout: true, status: 401
+      render html: t('not_authorized'), layout: true, status: 401
     end
   end
 
   def create
-    if @logged_in.admin?(:manage_news) or Setting.get(:features, :news_by_users)
+    if @logged_in.admin?(:manage_news) || Setting.get(:features, :news_by_users)
       @news_item = NewsItem.new(news_item_params)
       @news_item.person = @logged_in
       @news_item.source = 'user'
@@ -76,14 +75,14 @@ class NewsController < ApplicationController
         end
       end
     else
-      render text: t('not_authorized'), layout: true, status: 401
+      render html: t('not_authorized'), layout: true, status: 401
     end
   end
 
   def edit
     @news_item = NewsItem.find(params[:id])
     unless @logged_in.can_update?(@news_item)
-      render text: t('not_authorized'), layout: true, status: 401
+      render html: t('not_authorized'), layout: true, status: 401
     end
   end
 
@@ -100,7 +99,7 @@ class NewsController < ApplicationController
         end
       end
     else
-      render text: t('not_authorized'), layout: true, status: 401
+      render html: t('not_authorized'), layout: true, status: 401
     end
   end
 
@@ -112,7 +111,7 @@ class NewsController < ApplicationController
         format.html { flash[:notice] = t('news.deleted'); redirect_to news_path }
       end
     else
-      render text: t('not_authorized'), layout: true, status: 401
+      render html: t('not_authorized'), layout: true, status: 401
     end
   end
 

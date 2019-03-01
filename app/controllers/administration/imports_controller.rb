@@ -1,5 +1,5 @@
 class Administration::ImportsController < ApplicationController
-  before_filter :only_admins
+  before_action :only_admins
 
   def index
     @imports = Import.order(created_at: :desc).includes(:person).with_row_counts.page(params[:page])
@@ -84,7 +84,7 @@ class Administration::ImportsController < ApplicationController
     unchanged_people
     unchanged_families
     errored
-  )
+  ).freeze
 
   def filter_rows(rows)
     FILTERS.each do |filter|
@@ -111,7 +111,7 @@ class Administration::ImportsController < ApplicationController
 
   def only_admins
     return if @logged_in.admin?(:import_data)
-    render text: t('only_admins'), layout: true, status: 401
+    render html: t('only_admins'), layout: true, status: 401
     false
   end
 

@@ -1,4 +1,4 @@
-require_relative '../rails_helper'
+require 'rails_helper'
 
 describe 'Friend', type: :request do
   before do
@@ -9,7 +9,7 @@ describe 'Friend', type: :request do
     Friendship.create!(person: @user, friend: @friend)
   end
 
-  it "has proper links" do
+  it 'has proper links' do
     sign_in_as @user
 
     view_profile @friend

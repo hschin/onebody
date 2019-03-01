@@ -1,10 +1,12 @@
-- CustomField.all.each do |field|
+- tab.fields.each do |field|
   .form-group
     = label_tag dom_id(field), field.name
     - name = "person[fields][#{field.id}]"
     - case field.format
     - when 'string'
       = text_field_tag name, @person.fields[field.id], class: 'form-control', id: dom_id(field)
+    - when 'text'
+      = text_area_tag name, @person.fields[field.id], class: 'form-control', id: dom_id(field)
     - when 'number'
       = number_field_tag name, @person.fields[field.id], class: 'form-control', id: dom_id(field)
     - when 'boolean'
@@ -16,3 +18,5 @@
           %button{ type: 'button', class: 'btn btn-info date-picker-btn' }
             = icon 'fa fa-calendar'
         = date_field_tag name, custom_field_date_format(@person.fields[field.id]), class: 'form-control', id: dom_id(field)
+    - when 'select'
+      = select_tag name, custom_field_select_options(field), class: 'form-control', id: dom_id(field)

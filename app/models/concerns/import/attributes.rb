@@ -6,16 +6,20 @@ module Concerns
       extend ActiveSupport::Concern
 
       def attributes_for_person(row)
-        attrs = attributes(row).select { |a| a !~ /^family_|^id$|^field\d+/ }
-        attrs.reverse_merge!('status' => 'active') if @import.create_as_active # TODO allow creating as pending
+        attrs = attributes(row).reject { |a| a =~ /^family_|^id$|^field\d+/ }
+        attrs.reverse_merge!('status' => 'active') if @import.create_as_active # TODO: allow creating as pending
         attrs['fields'] = custom_field_values_for_person(row)
+        %w(birthday anniversary).each do |key|
+          next unless attrs.key?(key)
+          attrs[key] = nil if empty_date?(attrs[key])
+        end
         attrs
       end
 
       def custom_field_values_for_person(row)
         attributes(row).each_with_object({}) do |(name, value), hash|
           next unless name =~ /^field(\d+)_/
-          id = $1.to_i
+          id = Regexp.last_match(1).to_i
           hash[id] = value
         end
       end
@@ -43,7 +47,10 @@ module Concerns
       def attributes(row)
         row.import_attributes_as_hash(real_attributes: true)
       end
+
+      def empty_date?(date)
+        date.to_s.gsub(%r{/|\-}, '').blank?
+      end
     end
   end
 end
-

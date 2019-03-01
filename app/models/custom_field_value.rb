@@ -1,6 +1,6 @@
-class CustomFieldValue < ActiveRecord::Base
+class CustomFieldValue < ApplicationRecord
   DATE_FORMAT_PATTERN = /\A\d{4}\-\d{2}\-\d{2}\z/
-  DATE_FORMAT = '%Y-%m-%d'
+  DATE_FORMAT = '%Y-%m-%d'.freeze
 
   scope_by_site_id
 
@@ -8,11 +8,22 @@ class CustomFieldValue < ActiveRecord::Base
   belongs_to :field, class_name: 'CustomField'
 
   validate :validate_value_format
+  validate :validate_label_lookup
+
+  validates :value, length: { maximum: 65_535 }
+
+  attr_accessor :label_lookup_failed
 
   def value=(v)
+    if v.is_a?(Concerns::Person::Fields::LabelLookupFailure)
+      self.label_lookup_failed = v.label
+      return
+    end
     self[:value] = case field.format
                    when 'date'
                      format_date_string(v)
+                   when 'boolean'
+                     format_boolean_string(v)
                    else
                      v
                    end
@@ -46,8 +57,20 @@ class CustomFieldValue < ActiveRecord::Base
     errors.add(:value, :invalid)
   end
 
+  def validate_label_lookup
+    return unless label_lookup_failed
+    errors.add(
+      :value,
+      I18n.t(
+        'activerecord.errors.models.custom_field_value.option_not_found',
+        label: label_lookup_failed
+      )
+    )
+  end
+
   def format_date_string(string)
     return unless string.present?
+    return if empty_date?(string)
     if string =~ DATE_FORMAT_PATTERN
       string
     elsif (date = Date.parse_in_locale(string))
@@ -55,5 +78,14 @@ class CustomFieldValue < ActiveRecord::Base
     else
       string
     end
+  end
+
+  def empty_date?(date)
+    date.to_s.gsub(%r{/|\-}, '').blank?
+  end
+
+  def format_boolean_string(string)
+    return unless string.present?
+    string =~ /\A(true|t|yes|y|1)\z/i ? '1' : '0'
   end
 end

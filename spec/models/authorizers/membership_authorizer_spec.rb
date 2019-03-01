@@ -1,11 +1,10 @@
-require_relative '../../rails_helper'
+require 'rails_helper'
 
 describe MembershipAuthorizer do
-
   before do
     @user = FactoryGirl.create(:person)
     @group = FactoryGirl.create(:group)
-    @membership = @group.memberships.create!
+    @membership = @group.memberships.create!(person: FactoryGirl.create(:person))
   end
 
   it 'should not update membership' do
@@ -126,5 +125,4 @@ describe MembershipAuthorizer do
       end
     end
   end
-
 end

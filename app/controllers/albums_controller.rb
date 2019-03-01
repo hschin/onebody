@@ -1,5 +1,4 @@
 class AlbumsController < ApplicationController
-
   load_and_authorize_parent :group, :person, shallow: true
   load_and_authorize_resource
 
@@ -8,7 +7,7 @@ class AlbumsController < ApplicationController
     @albums = albums.readable_by(current_user)
     respond_to do |format|
       format.html
-      format.js { render text: @albums.to_json }
+      format.js { render plain: @albums.to_json }
     end
   end
 
@@ -51,5 +50,4 @@ class AlbumsController < ApplicationController
   def album_params
     params.require(:album).permit(:name, :description, :is_public)
   end
-
 end

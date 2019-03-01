@@ -13,10 +13,12 @@ end
 require_relative '../lib/console'
 require_relative '../lib/version_info'
 require_relative '../lib/email_config_info'
+require_relative '../lib/locale_info'
 
 module OneBody
   extend VersionInfo
   extend EmailConfigInfo
+  extend LocaleInfo
 
   class Application < Rails::Application
     # Custom directories with classes and modules you want to be autoloadable.
@@ -59,7 +61,5 @@ module OneBody
     config.generators do |g|
       g.test_framework :rspec
     end
-
-    config.active_record.raise_in_transactional_callbacks = true
   end
 end

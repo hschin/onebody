@@ -1,9 +1,9 @@
 class SearchesController < ApplicationController
-
   MAX_SELECT_PEOPLE = 10
   MAX_SELECT_FAMILIES = 10
 
-  before_filter :get_family, if: -> { params[:family_id] }
+  before_action :get_family, if: -> { params[:family_id] }
+  before_action :get_search_params
 
   def show
     create
@@ -14,7 +14,7 @@ class SearchesController < ApplicationController
   end
 
   def create
-    if params[:family_name].present? or params[:family_barcode_id].present?
+    if params[:family_name].present? || params[:family_barcode_id].present?
       if params[:family_name] =~ /^\d+$/
         params[:family_barcode_id] = params.delete(:family_name)
       end
@@ -55,4 +55,18 @@ class SearchesController < ApplicationController
     raise StandardError unless @logged_in.can_update?(@family)
   end
 
+  def get_search_params
+    @search_params = params.permit(
+      :name,
+      :gender,
+      :group_select_option,
+      :group_category,
+      :type,
+      :phone,
+      :email,
+      birthday:    %i(month day),
+      anniversary: %i(month day),
+      address:     %i(city state zip)
+    )
+  end
 end
