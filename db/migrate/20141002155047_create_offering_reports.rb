@@ -1,4 +1,4 @@
-class CreateOfferingReports < ActiveRecord::Migration
+class CreateOfferingReports < ActiveRecord::Migration[4.2]
   def change
     create_table :offering_reports do |t|
       t.date :report_date

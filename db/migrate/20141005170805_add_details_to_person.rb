@@ -1,4 +1,4 @@
-class AddDetailsToPerson < ActiveRecord::Migration
+class AddDetailsToPerson < ActiveRecord::Migration[4.2]
   def change
     add_column :people, :is_member, :boolean
     add_column :people, :congregation, :string
