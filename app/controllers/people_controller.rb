@@ -33,7 +33,6 @@ class PeopleController < ApplicationController
       else
         @family_people = @person.family ? @person.family.visible_people.reject { |p| p.id == @person.id } : []
       end
-      @offerings = @person.offerings.take(3)
       @albums = @person.albums.order(created_at: :desc)
       @friends = @person.friends.minimal
       @verses = @person.verses.order(:book, :chapter, :verse)
