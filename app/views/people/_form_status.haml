@@ -2,6 +2,9 @@
   = form.label :membership_status, t('people.edit.membership_status')
   = form.text_field :membership_status, size: 15, class: 'form-control'
 .form-group
+  = form.label :congregation, t('people.edit.congregation')
+  = form.select :congregation, options_from_i18n('people.edit.congregations'), {}, class: 'form-control'
+.form-group
   = form.label :baptism_date, t('people.edit.baptism_date')
   .input-group
     .input-group-btn

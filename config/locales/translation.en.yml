@@ -2529,6 +2529,12 @@ en:
         inactive: Inactive
         pending: Pending
         active: Active
+      congregation: Congregation
+      congregations:
+        nil:
+        or: Orchard
+        fc: Fort Canning
+        bb: Bukit Batok
     move:
       heading: Add to %{family} family
       description_html: Find someone to add to the <a href='%{url}'>%{family}</a>

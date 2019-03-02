@@ -55,6 +55,7 @@ class Updater
       legacy_family_id:     :admin,
       member_no:            :admin,
       membership_status:    :admin,
+      congregation:         :admin,
       baptism_date:         :admin,
       confirmation_date:    :admin,
       membership_transfer_date:   :admin,
